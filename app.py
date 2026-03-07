@@ -1,28 +1,26 @@
 """
-Etopaz Platform Analytics
-Streamlit Dashboard
+Etopaz Platform Analytics â Static Dashboard
+No file upload required. Data is pre-loaded.
+Claude AI insights integrated.
 """
 
-import io
-import re
 import streamlit as st
-import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # PAGE CONFIG
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 st.set_page_config(
     page_title="Etopaz Platform Analytics",
-    page_icon="📊",
+    page_icon="ð",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # COLOURS
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 C = {
     "bg":      "#0d0f14",
     "card":    "#13161d",
@@ -40,7 +38,6 @@ C = {
     "dim":     "#454c60",
 }
 
-# Base Plotly layout
 PL = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -56,9 +53,9 @@ PL = dict(
     height=260,
 )
 
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # CSS
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap');
@@ -66,10 +63,12 @@ st.markdown(f"""
 html, body, .stApp {{ background-color:{C['bg']} !important; font-family:'Inter',system-ui,sans-serif; color:{C['white']}; }}
 section[data-testid="stSidebar"] {{ background-color:{C['card']} !important; border-right:1px solid {C['border']}; }}
 section[data-testid="stSidebar"] * {{ color:{C['light']} !important; }}
-.block-container {{ padding:2rem 2rem 4rem !important; max-width:100% !important; }}
+.block-container {{ padding:2rem 2.5rem 4rem !important; max-width:100% !important; }}
 h1,h2,h3,h4 {{ font-family:'Outfit',sans-serif !important; color:{C['white']} !important; }}
 #MainMenu, footer, header {{ visibility:hidden; }}
 hr {{ border-color:{C['border']} !important; }}
+div[data-testid="stTextInput"] input {{ background:{C['card2']} !important; border:1px solid {C['border']} !important; color:{C['white']} !important; border-radius:8px; }}
+div[data-testid="stTextInput"] label {{ color:{C['muted']} !important; font-size:11px !important; }}
 
 .kpi-card {{
     background:{C['card']}; border:1px solid {C['border']}; border-radius:12px;
@@ -99,7 +98,6 @@ hr {{ border-color:{C['border']} !important; }}
 .sec-line {{ flex:1; height:1px; background:{C['border']}; }}
 
 .c-title {{ font-family:'Outfit',sans-serif; font-size:15px; font-weight:700; color:{C['white']}; margin-bottom:3px; }}
-.c-sub   {{ font-size:12px; color:{C['muted']}; margin-bottom:4px; line-height:1.5; }}
 
 .styled-table {{ width:100%; border-collapse:collapse; font-size:13.5px; }}
 .styled-table th {{
@@ -122,225 +120,80 @@ hr {{ border-color:{C['border']} !important; }}
 .ret-new   {{ font-size:11.5px; color:{C['green']}; font-weight:500; }}
 .ret-churn {{ font-size:11.5px; color:{C['orange']}; font-weight:500; margin-top:2px; }}
 
-.insight {{ background:{C['card']}; border:1px solid {C['border']}; border-radius:12px; padding:22px; height:100%; }}
-.insight.pos   {{ border-color:rgba(16,217,138,.3);  background:rgba(16,217,138,.04); }}
-.insight.alert {{ border-color:rgba(240,62,62,.35);  background:rgba(240,62,62,.04); }}
-.insight.warn  {{ border-color:rgba(255,193,61,.3);   background:rgba(255,193,61,.04); }}
-.insight h4  {{ font-family:'Outfit',sans-serif!important; font-size:15px!important; font-weight:700; color:{C['white']}!important; margin:8px 0 10px!important; }}
-.insight p   {{ font-size:13.5px; color:{C['light']}; line-height:1.75; }}
-.insight p strong {{ color:{C['white']}; }}
-.hi  {{ color:{C['green']};  font-weight:600; }}
-.dng {{ color:{C['red']};    font-weight:600; }}
-.wrn {{ color:{C['yellow']}; font-weight:600; }}
+.ai-box {{ background:rgba(155,114,244,.04); border:1px solid rgba(155,114,244,.35);
+           border-radius:14px; padding:26px 28px; margin-top:10px; }}
+.ai-box h3 {{ font-family:'Outfit',sans-serif!important; font-size:18px!important;
+              font-weight:700; color:{C['purple']}!important; margin-bottom:16px!important; }}
+.ai-content {{ font-size:14px; color:{C['light']}; line-height:1.9; white-space:pre-wrap; }}
 </style>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# CONSTANTS
-# ─────────────────────────────────────────────
-MONTH_MAP = {
-    "january": (1, "Yanvar"),   "february": (2, "Fevral"),
-    "march":   (3, "Mart"),     "april":    (4, "Aprel"),
-    "may":     (5, "May"),      "june":     (6, "İyun"),
-    "july":    (7, "İyul"),     "august":   (8, "Avqust"),
-    "september":(9,"Sentyabr"), "october": (10, "Oktyabr"),
-    "november":(11,"Noyabr"),   "december":(12, "Dekabr"),
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# HARDCODED DATA  (Jun 2025 â Feb 2026)
+# âââââââââââââââââââââââââââââââââââââââââââââ
+RAW_KPI = {
+    "2025-06": {"label":"Ä°yun 2025",     "turnover":6.041,  "ggr":1.373, "payout_ratio":77.28, "deposits":2.744,  "withdrawals":1.44,  "tickets":324681,  "users":10315, "risk_users":1097, "pareto_top1_pct":40.2, "pareto_top1_count":103},
+    "2025-07": {"label":"Ä°yul 2025",     "turnover":18.107, "ggr":4.295, "payout_ratio":76.28, "deposits":8.59,   "withdrawals":4.286, "tickets":970138,  "users":14412, "risk_users":1297, "pareto_top1_pct":43.1, "pareto_top1_count":144},
+    "2025-08": {"label":"Avqust 2025",   "turnover":24.231, "ggr":6.098, "payout_ratio":74.83, "deposits":12.035, "withdrawals":5.972, "tickets":1384050, "users":17890, "risk_users":1308, "pareto_top1_pct":41.3, "pareto_top1_count":178},
+    "2025-09": {"label":"Sentyabr 2025", "turnover":26.783, "ggr":5.721, "payout_ratio":78.64, "deposits":13.225, "withdrawals":7.347, "tickets":1498410, "users":20802, "risk_users":2430, "pareto_top1_pct":45.6, "pareto_top1_count":208},
+    "2025-10": {"label":"Oktyabr 2025",  "turnover":28.156, "ggr":6.791, "payout_ratio":75.88, "deposits":14.187, "withdrawals":7.39,  "tickets":1765156, "users":24247, "risk_users":2234, "pareto_top1_pct":42.1, "pareto_top1_count":242},
+    "2025-11": {"label":"Noyabr 2025",   "turnover":29.572, "ggr":7.195, "payout_ratio":75.67, "deposits":15.006, "withdrawals":7.652, "tickets":1872100, "users":25047, "risk_users":1966, "pareto_top1_pct":43.2, "pareto_top1_count":250},
+    "2025-12": {"label":"Dekabr 2025",   "turnover":31.078, "ggr":7.286, "payout_ratio":76.55, "deposits":15.649, "withdrawals":8.439, "tickets":1955316, "users":25173, "risk_users":2397, "pareto_top1_pct":42.8, "pareto_top1_count":251},
+    "2026-01": {"label":"Yanvar 2026",   "turnover":34.715, "ggr":7.993, "payout_ratio":76.97, "deposits":17.724, "withdrawals":9.435, "tickets":2055102, "users":27056, "risk_users":2025, "pareto_top1_pct":50.6, "pareto_top1_count":270},
+    "2026-02": {"label":"Fevral 2026",   "turnover":33.437, "ggr":6.665, "payout_ratio":80.07, "deposits":16.421, "withdrawals":9.672, "tickets":2188421, "users":28670, "risk_users":3339, "pareto_top1_pct":42.2, "pareto_top1_count":286},
+}
+RAW_RET = {
+    "2025-07": {"rate":89.1,"new":5225, "churned":1128,"retained":9187},
+    "2025-08": {"rate":86.0,"new":5502, "churned":2024,"retained":12388},
+    "2025-09": {"rate":84.3,"new":5718, "churned":2806,"retained":15084},
+    "2025-10": {"rate":85.9,"new":6373, "churned":2928,"retained":17874},
+    "2025-11": {"rate":80.6,"new":5507, "churned":4707,"retained":19540},
+    "2025-12": {"rate":80.0,"new":5142, "churned":5016,"retained":20031},
+    "2026-01": {"rate":81.9,"new":6440, "churned":4557,"retained":20616},
+    "2026-02": {"rate":81.0,"new":6768, "churned":5154,"retained":21902},
+}
+RAW_FB = {
+    "2025-06": {"label":"Ä°yun 2025",     "given":0.12,  "used":0.084, "fb_payout":0.033, "payout_ratio":38.71},
+    "2025-07": {"label":"Ä°yul 2025",     "given":0.393, "used":0.359, "fb_payout":0.152, "payout_ratio":42.15},
+    "2025-08": {"label":"Avqust 2025",   "given":0.591, "used":0.557, "fb_payout":0.203, "payout_ratio":36.51},
+    "2025-09": {"label":"Sentyabr 2025", "given":0.667, "used":0.661, "fb_payout":0.299, "payout_ratio":45.23},
+    "2025-10": {"label":"Oktyabr 2025",  "given":0.79,  "used":0.678, "fb_payout":0.301, "payout_ratio":44.49},
+    "2025-11": {"label":"Noyabr 2025",   "given":0.831, "used":0.774, "fb_payout":0.269, "payout_ratio":34.82},
+    "2025-12": {"label":"Dekabr 2025",   "given":0.91,  "used":0.854, "fb_payout":0.37,  "payout_ratio":43.25},
+    "2026-01": {"label":"Yanvar 2026",   "given":1.118, "used":1.089, "fb_payout":0.493, "payout_ratio":45.31},
+    "2026-02": {"label":"Fevral 2026",   "given":0.836, "used":0.805, "fb_payout":0.393, "payout_ratio":48.76},
 }
 
-TIERS = [
-    "Sharp Platinium", "Platinium", "Sharp Gold", "Gold",
-    "Sharp Silver", "Silver", "Bronze", "Iron",
-    "Rusty Iron", "Regular", "Inactive",
-]
+ALL_PERIODS = sorted(RAW_KPI.keys())
+LABELS = {p: RAW_KPI[p]["label"] for p in ALL_PERIODS}
 
-TIER_COLORS = {
-    "Platinium": C["green"],  "Sharp Platinium": C["green"],
-    "Gold":      C["yellow"], "Sharp Gold":      C["yellow"],
-    "Silver":    C["blue"],   "Sharp Silver":    C["blue"],
-    "Bronze":    C["orange"], "Iron":            C["muted"],
-    "Rusty Iron":C["dim"],    "Regular":         C["dim"],
-    "Inactive":  C["dim"],
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# SESSION STATE
+# âââââââââââââââââââââââââââââââââââââââââââââ
+ADMIN_PASS = "etopaz2026"
+
+_defaults = {
+    "admin_mode":    False,
+    "title_main":    "Etopaz Platform Analytics",
+    "title_sub":     "OMT DÃ¶vrÃ¼  Â·  MÃ¼ÅtÉri SÉviyyÉsindÉ DÉrin Analiz",
+    "title_kpi":     "Æsas GÃ¶stIricilÉr",
+    "title_trend":   "AylÄ±q Trend Analizi",
+    "title_table":   "AylÄ±q Tam CÉdvÉl",
+    "title_ret":     "MÃ¼ÅtÉri SaxlanÄ±lmasÄ± â Retention",
+    "title_fb":      "Freebet Analizi",
+    "title_ai":      "Claude AI â Etopaz AnalitikasÄ±",
+    "ai_result":     "",
 }
+for k, v in _defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
-# ─────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────
-def extract_period(filename: str):
-    fn = filename.lower()
-    for eng, (num, az) in MONTH_MAP.items():
-        if eng in fn:
-            years = re.findall(r"20\d{2}", fn)
-            if years:
-                y = int(years[0])
-                return f"{y}-{num:02d}", f"{az} {y}"
-    return None, None
-
-
-def section(title: str):
-    st.markdown(
-        f'<div class="sec-head"><span>{title}</span><div class="sec-line"></div></div>',
-        unsafe_allow_html=True,
-    )
-
-
-def kpi_html(label, value, sub, badge_txt, badge_cls, color):
-    return f"""
-    <div class="kpi-card {color}">
-        <div class="kpi-label">{label}</div>
-        <div class="kpi-val {color}">{value}</div>
-        <div class="kpi-sub">{sub}</div>
-        <span class="badge {badge_cls}">{badge_txt}</span>
-    </div>"""
-
-
-# ─────────────────────────────────────────────
-# DATA PROCESSING (cached)
-# ─────────────────────────────────────────────
-@st.cache_data(show_spinner=False)
-def process_kpi(file_bytes: bytes):
-    df = pd.read_excel(io.BytesIO(file_bytes))
-    # Standardise column names by position
-    cols = ["user_id", "period", "tickets", "turnover", "payout",
-            "ggr", "payout_ratio", "fb_turnover", "fb_payout",
-            "deposit", "withdrawal", "bet_days"]
-    df.columns = cols[:len(df.columns)]
-
-    users = df[(df["period"] == "Total") & (df["user_id"] != "Grand Total")].copy()
-    users["user_id"] = users["user_id"].astype(str)
-    for col in ["turnover", "ggr", "payout_ratio", "deposit", "withdrawal", "tickets"]:
-        users[col] = pd.to_numeric(users[col], errors="coerce").fillna(0)
-
-    gt_row = df[df["user_id"] == "Grand Total"]
-    if gt_row.empty:
-        return users, {}
-    gt = gt_row.iloc[0]
-    return users, {
-        "users":        len(users),
-        "turnover":     float(gt["turnover"]),
-        "ggr":          float(gt["ggr"]),
-        "payout_ratio": float(gt["payout_ratio"]),
-        "deposits":     float(gt["deposit"]),
-        "withdrawals":  float(gt["withdrawal"]),
-        "tickets":      int(gt["tickets"]),
-    }
-
-
-@st.cache_data(show_spinner=False)
-def process_fb(file_bytes: bytes):
-    df = pd.read_excel(io.BytesIO(file_bytes))
-    cols = ["user_id", "tier", "name", "category", "given", "used", "fb_payout", "fb_payout_ratio"]
-    df.columns = cols[:len(df.columns)]
-
-    gt_row = df[df["user_id"] == "Grand Total"]
-    if gt_row.empty:
-        return pd.DataFrame(), {}
-    gt = gt_row.iloc[0]
-
-    user_rows = df[df["tier"].isin(TIERS)].copy()
-    for col in ["given", "used", "fb_payout", "fb_payout_ratio"]:
-        user_rows[col] = pd.to_numeric(user_rows[col], errors="coerce").fillna(0)
-
-    return user_rows, {
-        "given":        float(gt["given"]),
-        "used":         float(gt["used"]),
-        "fb_payout":    float(gt["fb_payout"]),
-        "payout_ratio": float(gt["fb_payout_ratio"]),
-    }
-
-
-# ─────────────────────────────────────────────
-# CHART BUILDERS
-# ─────────────────────────────────────────────
-def bar_chart(x, y, colors=None, y_fmt=None, height=260):
-    if colors is None:
-        colors = [C["blue"]] * len(y)
-    fig = go.Figure(go.Bar(
-        x=x, y=y,
-        marker_color=colors, marker_line_width=0,
-        hovertemplate="<b>%{x}</b><br>%{y}<extra></extra>",
-    ))
-    layout = {**PL, "height": height}
-    if y_fmt:
-        layout["yaxis"] = {**layout.get("yaxis", {}),
-                           "tickprefix": y_fmt.get("prefix", ""),
-                           "ticksuffix": y_fmt.get("suffix", "")}
-    fig.update_layout(**layout)
-    return fig
-
-
-def line_chart(x, y, color, fill=True, y_range=None, height=240):
-    rgba = f"rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.08)"
-    fig = go.Figure(go.Scatter(
-        x=x, y=y,
-        line=dict(color=color, width=2.5),
-        mode="lines+markers",
-        marker=dict(size=5, color=color),
-        fill="tozeroy" if fill else None,
-        fillcolor=rgba,
-        hovertemplate="<b>%{x}</b><br>%{y}<extra></extra>",
-    ))
-    layout = {**PL, "height": height}
-    if y_range:
-        layout["yaxis"] = {**layout.get("yaxis", {}), "range": y_range}
-    fig.update_layout(**layout, showlegend=False)
-    return fig
-
-
-def bar_line_chart(x, bar_y, line_y, bar_name, line_name,
-                   bar_color, line_color, y2_range=None, height=260):
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Bar(
-        x=x, y=bar_y, name=bar_name,
-        marker_color=bar_color, marker_line_width=0,
-        hovertemplate=f"<b>%{{x}}</b><br>{bar_name}: %{{y:.2f}}<extra></extra>",
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=x, y=line_y, name=line_name,
-        line=dict(color=line_color, width=2.5),
-        mode="lines+markers",
-        marker=dict(size=6, color=[C["red"] if v > 78 else line_color for v in line_y]),
-        hovertemplate=f"<b>%{{x}}</b><br>{line_name}: %{{y:.1f}}%<extra></extra>",
-    ), secondary_y=True)
-    layout = {**PL, "height": height, "showlegend": True,
-              "legend": dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)")}
-    if y2_range:
-        layout["yaxis2"] = dict(range=y2_range, gridcolor=C["border"],
-                                tickfont=dict(color=C["muted"]),
-                                ticksuffix="%", zeroline=False,
-                                showgrid=False)
-    fig.update_layout(**layout)
-    return fig
-
-
-def grouped_bar(x, y1, y2, name1, name2, c1, c2, height=240):
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=x, y=y1, name=name1, marker_color=c1, marker_line_width=0))
-    fig.add_trace(go.Bar(x=x, y=y2, name=name2, marker_color=c2, marker_line_width=0))
-    layout = {**PL, "height": height, "showlegend": True, "barmode": "group",
-              "legend": dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)")}
-    fig.update_layout(**layout)
-    return fig
-
-
-def donut_chart(labels, values, colors, height=240):
-    fig = go.Figure(go.Pie(
-        labels=labels, values=values, hole=0.62,
-        marker=dict(colors=colors, line=dict(width=0)),
-        hovertemplate="<b>%{label}</b><br>%{value:.1f}%<extra></extra>",
-    ))
-    layout = {**PL, "height": height, "showlegend": True,
-              "legend": dict(orientation="v", x=1.0, y=0.5,
-                             bgcolor="rgba(0,0,0,0)", font=dict(color=C["muted"], size=10))}
-    fig.update_layout(**layout)
-    return fig
-
-
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # SIDEBAR
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 with st.sidebar:
     st.markdown(f"""
-    <div style="padding:12px 0 20px">
+    <div style="padding:14px 0 18px">
         <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;
                     background:linear-gradient(120deg,{C['green']},{C['blue']});
                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">
@@ -353,656 +206,379 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("**📂 USER BASE KPI Faylları**")
-    kpi_uploads = st.file_uploader(
-        "kpi", type=["xlsx"], accept_multiple_files=True,
-        label_visibility="collapsed",
-        help="Hər ay üçün 'User Based KPI ...' Excel faylını yükləyin",
-    )
-
-    st.markdown("**🎁 Freebet Faylları** *(isteğe bağlı)*")
-    fb_uploads = st.file_uploader(
-        "fb", type=["xlsx"], accept_multiple_files=True,
-        label_visibility="collapsed",
-        help="Hər ay üçün 'Freebet Categories ...' Excel faylını yükləyin",
-    )
-
-    st.divider()
-
-    # Date range — computed after files are loaded
-    selected_periods = []
-    if kpi_uploads:
-        period_map = {}
-        for f in kpi_uploads:
-            pid, lbl = extract_period(f.name)
-            if pid:
-                period_map[pid] = lbl
-        sorted_all = sorted(period_map.keys())
-        labels_all = [period_map[p] for p in sorted_all]
-
-        if len(sorted_all) >= 2:
-            st.markdown("**📅 Tarix Aralığı**")
-            start_i = st.selectbox(
-                "Başlanğıc ay", range(len(labels_all)),
-                format_func=lambda i: labels_all[i], key="s_start",
-            )
-            end_i = st.selectbox(
-                "Son ay", range(len(labels_all)),
-                format_func=lambda i: labels_all[i],
-                index=len(labels_all) - 1, key="s_end",
-            )
-            if start_i > end_i:
-                st.error("Başlanğıc son aydan böyük ola bilməz!")
-                selected_periods = sorted_all
-            else:
-                selected_periods = sorted_all[start_i : end_i + 1]
-        else:
-            selected_periods = sorted_all
+    st.markdown("**ð Tarix AralÄ±ÄÄ±**")
+    labels_all = [LABELS[p] for p in ALL_PERIODS]
+    start_i = st.selectbox("BaÅlanÄÄ±c", range(len(ALL_PERIODS)),
+                           format_func=lambda i: labels_all[i], key="s_start")
+    end_i   = st.selectbox("Son ay",    range(len(ALL_PERIODS)),
+                           format_func=lambda i: labels_all[i],
+                           index=len(ALL_PERIODS)-1, key="s_end")
+    if start_i > end_i:
+        st.error("BaÅlanÄÄ±c son aydan bÃ¶yÃ¼k ola bilmÉz!")
+        sel = ALL_PERIODS[:]
+    else:
+        sel = ALL_PERIODS[start_i:end_i+1]
 
     st.divider()
+    st.markdown("**âï¸ Admin Modu**")
+    if not st.session_state.admin_mode:
+        pw = st.text_input("ÅifrÉ", type="password", placeholder="â¢â¢â¢â¢â¢â¢â¢â¢", key="pw_input")
+        if pw == ADMIN_PASS:
+            st.session_state.admin_mode = True
+            st.rerun()
+        elif pw:
+            st.error("ÅifrÉ yanlÄ±ÅdÄ±r")
+    else:
+        st.success("â Admin modu aktiv")
+        if st.button("ÃÄ±xÄ±Å"):
+            st.session_state.admin_mode = False
+            st.rerun()
+
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# ADMIN TITLE EDITOR
+# âââââââââââââââââââââââââââââââââââââââââââââ
+if st.session_state.admin_mode:
+    with st.expander("âï¸ BaÅlÄ±qlarÄ± RedaktÉ Et", expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.session_state.title_main  = st.text_input("Æsas baÅlÄ±q",        st.session_state.title_main,  key="e1")
+            st.session_state.title_sub   = st.text_input("Alt baÅlÄ±q",          st.session_state.title_sub,   key="e2")
+            st.session_state.title_kpi   = st.text_input("KPI bÃ¶lmÉsi",         st.session_state.title_kpi,   key="e3")
+            st.session_state.title_trend = st.text_input("Trend bÃ¶lmÉsi",       st.session_state.title_trend, key="e4")
+        with c2:
+            st.session_state.title_table = st.text_input("CÉdvÉl bÃ¶lmÉsi",      st.session_state.title_table, key="e5")
+            st.session_state.title_ret   = st.text_input("Retention bÃ¶lmÉsi",   st.session_state.title_ret,   key="e6")
+            st.session_state.title_fb    = st.text_input("Freebet bÃ¶lmÉsi",     st.session_state.title_fb,    key="e7")
+            st.session_state.title_ai    = st.text_input("AI bÃ¶lmÉsi baÅlÄ±ÄÄ±",  st.session_state.title_ai,    key="e8")
+
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# HELPERS
+# âââââââââââââââââââââââââââââââââââââââââââââ
+def section(title):
     st.markdown(
-        f"<div style='font-size:11px;color:{C['dim']};text-align:center'>Etopaz Platform · Mart 2026</div>",
-        unsafe_allow_html=True,
-    )
+        f'<div class="sec-head"><span>{title}</span><div class="sec-line"></div></div>',
+        unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
+def kpi_card(label, value, sub, badge_txt, badge_cls, color):
+    st.markdown(f"""
+    <div class="kpi-card {color}">
+        <div class="kpi-label">{label}</div>
+        <div class="kpi-val {color}">{value}</div>
+        <div class="kpi-sub">{sub}</div>
+        <span class="badge {badge_cls}">{badge_txt}</span>
+    </div>""", unsafe_allow_html=True)
+
+def bar_chart(x, y, colors=None, height=260):
+    if colors is None: colors = [C["blue"]]*len(y)
+    fig = go.Figure(go.Bar(x=x, y=y, marker_color=colors, marker_line_width=0,
+                           hovertemplate="<b>%{x}</b><br>%{y}<extra></extra>"))
+    fig.update_layout(**{**PL, "height": height})
+    return fig
+
+def bar_line_chart(x, bar_y, line_y, bar_name, line_name,
+                   bar_color, line_color, y2_range=None, height=260):
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Bar(x=x, y=bar_y, name=bar_name,
+                         marker_color=bar_color, marker_line_width=0,
+                         hovertemplate=f"<b>%{{x}}</b><br>{bar_name}: â¼%{{y:.2f}}M<extra></extra>"),
+                  secondary_y=False)
+    fig.add_trace(go.Scatter(
+        x=x, y=line_y, name=line_name,
+        line=dict(color=line_color, width=2.5), mode="lines+markers",
+        marker=dict(size=6, color=[C["red"] if v > 78 else line_color for v in line_y]),
+        hovertemplate=f"<b>%{{x}}</b><br>{line_name}: %{{y:.1f}}%<extra></extra>"),
+        secondary_y=True)
+    layout = {**PL, "height": height, "showlegend": True,
+              "legend": dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)")}
+    if y2_range:
+        layout["yaxis2"] = dict(range=y2_range, gridcolor=C["border"],
+                                tickfont=dict(color=C["muted"]),
+                                ticksuffix="%", zeroline=False, showgrid=False)
+    fig.update_layout(**layout)
+    return fig
+
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# FILTER DATA
+# âââââââââââââââââââââââââââââââââââââââââââââ
+kpi_d  = {p: RAW_KPI[p] for p in sel}
+fb_d   = {p: RAW_FB[p]  for p in sel if p in RAW_FB}
+ret_d  = {p: RAW_RET[p] for p in sel if p in RAW_RET}
+
+labs      = [kpi_d[p]["label"]        for p in sel]
+to_list   = [kpi_d[p]["turnover"]     for p in sel]
+ggr_list  = [kpi_d[p]["ggr"]          for p in sel]
+pr_list   = [kpi_d[p]["payout_ratio"] for p in sel]
+cust_list = [kpi_d[p]["users"]        for p in sel]
+dep_list  = [kpi_d[p]["deposits"]     for p in sel]
+wd_list   = [kpi_d[p]["withdrawals"]  for p in sel]
+tk_list   = [kpi_d[p]["tickets"]      for p in sel]
+
+total_to  = sum(to_list)
+total_ggr = sum(ggr_list)
+total_dep = sum(dep_list)
+total_wd  = sum(wd_list)
+avg_pr    = sum(pr_list)/len(pr_list)
+last_pr   = pr_list[-1]
+dep_wd_r  = total_dep/total_wd if total_wd else 0
+to_mom    = round((to_list[-1]/to_list[-2]-1)*100,1) if len(to_list)>1 else 0
+ggr_mom   = round((ggr_list[-1]/ggr_list[-2]-1)*100,1) if len(ggr_list)>1 else 0
+cust_mom  = round((cust_list[-1]/cust_list[-2]-1)*100,1) if len(cust_list)>1 else 0
+
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # HEADER
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 st.markdown(f"""
 <div style="padding-bottom:24px;border-bottom:1px solid {C['border']}">
     <div style="font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;
                 background:linear-gradient(120deg,{C['green']} 0%,{C['blue']} 60%);
                 -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1">
-        Etopaz Platform Analytics
+        {st.session_state.title_main}
     </div>
     <div style="font-size:13px;color:{C['muted']};margin-top:5px">
-        Etopaz Platform &nbsp;·&nbsp; OMT Dövrü &nbsp;·&nbsp; Müştəri Səviyyəsində Dərin Analiz
+        {st.session_state.title_sub}
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# NO DATA STATE
-# ─────────────────────────────────────────────
-if not kpi_uploads:
-    st.markdown(f"""
-    <div style="text-align:center;padding:80px 20px">
-        <div style="font-size:60px;margin-bottom:20px">📁</div>
-        <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;
-                    color:{C['white']};margin-bottom:12px">
-            Məlumat yükləyin
-        </div>
-        <div style="font-size:14px;color:{C['muted']};max-width:420px;margin:0 auto;line-height:1.8">
-            Sol paneldən <strong style="color:{C['light']}">USER BASE KPI</strong>
-            Excel fayllarını yükləyin.<br>
-            Hər ay üçün ayrı fayl yükləyə bilərsiniz.<br>
-            Freebet faylları <em>isteğe bağlıdır</em>.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
-
-# ─────────────────────────────────────────────
-# PROCESS FILES
-# ─────────────────────────────────────────────
-kpi_data  = {}   # pid -> {label, users, turnover, ...}
-kpi_users = {}   # pid -> DataFrame
-
-with st.spinner("Məlumatlar işlənir..."):
-    for f in kpi_uploads:
-        pid, label = extract_period(f.name)
-        if pid and pid in selected_periods:
-            raw = f.read(); f.seek(0)
-            users_df, gt = process_kpi(raw)
-            if gt:
-                kpi_data[pid]  = {**gt, "label": label}
-                kpi_users[pid] = users_df
-
-fb_data       = {}   # pid -> {label, given, used, ...}
-fb_users_data = {}   # pid -> DataFrame
-
-if fb_uploads:
-    for f in fb_uploads:
-        pid, label = extract_period(f.name)
-        if pid and pid in selected_periods:
-            raw = f.read(); f.seek(0)
-            fb_df, gt = process_fb(raw)
-            if gt:
-                fb_data[pid]       = {**gt, "label": label}
-                fb_users_data[pid] = fb_df
-
-if not kpi_data:
-    st.warning("Seçilmiş tarix aralığı üçün məlumat tapılmadı. Faylları yoxlayın.")
-    st.stop()
-
-sorted_kpi    = sorted(kpi_data.keys())
-months_labels = [kpi_data[p]["label"] for p in sorted_kpi]
-months_short  = [l.split()[0][:3] for l in months_labels]
-
-# ─────────────────────────────────────────────
-# AGGREGATE METRICS
-# ─────────────────────────────────────────────
-total_to   = sum(d["turnover"]    for d in kpi_data.values())
-total_ggr  = sum(d["ggr"]         for d in kpi_data.values())
-total_dep  = sum(d["deposits"]    for d in kpi_data.values())
-total_wd   = sum(d["withdrawals"] for d in kpi_data.values())
-max_users  = max(d["users"]       for d in kpi_data.values())
-dep_wd_r   = total_dep / total_wd if total_wd else 0
-
-to_list   = [kpi_data[p]["turnover"] / 1e6       for p in sorted_kpi]
-ggr_list  = [kpi_data[p]["ggr"] / 1e6            for p in sorted_kpi]
-pr_list   = [kpi_data[p]["payout_ratio"] * 100   for p in sorted_kpi]
-dep_list  = [kpi_data[p]["deposits"] / 1e6       for p in sorted_kpi]
-wd_list   = [kpi_data[p]["withdrawals"] / 1e6    for p in sorted_kpi]
-cust_list = [kpi_data[p]["users"]                for p in sorted_kpi]
-tk_list   = [kpi_data[p]["tickets"]              for p in sorted_kpi]
-last_pr   = pr_list[-1]
-
-# Badges
-to_chg = (to_list[-1] - to_list[0]) / to_list[0] * 100 if len(to_list) >= 2 else 0
-to_badge = f"↑ +{to_chg:.0f}%" if to_chg >= 0 else f"↓ {to_chg:.0f}%"
-to_badge_cls = "up" if to_chg >= 0 else "down"
-pr_badge_cls = "down" if last_pr > 78 else "up"
-pr_badge_txt = f"{'⚠️ ' if last_pr > 78 else '✅ '}Son ay: {last_pr:.1f}%"
-
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # KPI CARDS
-# ─────────────────────────────────────────────
-section("Əsas Göstəricilər")
-cols = st.columns(5)
-kpis = [
-    ("Ümumi Dövriyyə",     f"₼{total_to/1e6:.1f}M",  f"{len(sorted_kpi)} ay kumulativ",       to_badge,    to_badge_cls, "green"),
-    ("Ümumi GGR",          f"₼{total_ggr/1e6:.1f}M", f"Orta margin: {total_ggr/total_to*100:.1f}%", "↑ Artım tendensiyası", "up",     "blue"),
-    ("Aktiv Müştəri (Pik)",f"{max_users:,}",          "Ən yüksək dəyər",                       f"↑ {cust_list[0]:,} → {cust_list[-1]:,}", "up", "orange"),
-    ("Ümumi Depozit",      f"₼{total_dep/1e6:.1f}M",  f"Dep/Wd: {dep_wd_r:.2f}×",             "↑ Sağlam nisbət",    "up",   "yellow"),
-    ("Son Ay Payout",      f"{last_pr:.1f}%",          "Benchmark: 77%",                        pr_badge_txt, pr_badge_cls, "red" if last_pr > 78 else "green"),
-]
-for col, (lbl, val, sub, bdg, bcls, clr) in zip(cols, kpis):
-    with col:
-        st.markdown(kpi_html(lbl, val, sub, bdg, bcls, clr), unsafe_allow_html=True)
+# âââââââââââââââââââââââââââââââââââââââââââââ
+section(st.session_state.title_kpi)
+k1,k2,k3,k4,k5 = st.columns(5)
+with k1:
+    kpi_card("Ãmumi DÃ¶vriyyÉ", f"â¼{total_to:.1f}M",
+             f"{len(sel)} ay Ã¼zrÉ",
+             f"{'â²' if to_mom>=0 else 'â¼'} {abs(to_mom):.1f}% son ay",
+             "up" if to_mom>=0 else "down", "green")
+with k2:
+    kpi_card("Ãmumi GGR", f"â¼{total_ggr:.1f}M",
+             f"Margin: {total_ggr/total_to*100:.1f}%",
+             f"{'â²' if ggr_mom>=0 else 'â¼'} {abs(ggr_mom):.1f}% son ay",
+             "up" if ggr_mom>=0 else "down", "blue")
+with k3:
+    kpi_card("Son Ay Payout", f"{last_pr:.1f}%",
+             f"Ortalama: {avg_pr:.1f}% | Benchmark: 77%",
+             "â  YÃ¼ksÉk" if last_pr>78 else "â Normal",
+             "warn" if last_pr>78 else "up",
+             "red" if last_pr>78 else "yellow")
+with k4:
+    kpi_card("Son Ay MÃ¼ÅtÉri", f"{cust_list[-1]:,}",
+             f"Ä°lk ay: {cust_list[0]:,}",
+             f"{'â²' if cust_mom>=0 else 'â¼'} {abs(cust_mom):.1f}% son ay",
+             "up" if cust_mom>=0 else "down", "orange")
+with k5:
+    kpi_card("Depozit / ÃÄ±xarÄ±Å", f"â¼{total_dep:.1f}M",
+             f"ÃÄ±xarÄ±Å: â¼{total_wd:.1f}M",
+             f"NisbÉt: {dep_wd_r:.2f}Ã",
+             "up", "green")
 
-st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# TREND CHARTS
+# âââââââââââââââââââââââââââââââââââââââââââââ
+section(st.session_state.title_trend)
+tc1, tc2 = st.columns(2)
+with tc1:
+    st.markdown('<div class="c-title">AylÄ±q DÃ¶vriyyÉ (â¼M)</div>', unsafe_allow_html=True)
+    to_colors = [C["green"] if v==max(to_list) else C["blue"] for v in to_list]
+    st.plotly_chart(bar_chart(labs, to_list, to_colors), use_container_width=True, config={"displayModeBar":False})
+with tc2:
+    st.markdown('<div class="c-title">GGR (â¼M) vÉ Payout Ratio (%)</div>', unsafe_allow_html=True)
+    st.plotly_chart(
+        bar_line_chart(labs, ggr_list, pr_list, "GGR (â¼M)", "Payout %",
+                       C["blue"], C["yellow"], y2_range=[60,90]),
+        use_container_width=True, config={"displayModeBar":False})
 
-# ─────────────────────────────────────────────
-# MONTHLY TREND CHARTS
-# ─────────────────────────────────────────────
-section("Aylıq Trend Analizi")
+tc3, tc4 = st.columns(2)
+with tc3:
+    st.markdown('<div class="c-title">Aktiv MÃ¼ÅtÉri SayÄ±</div>', unsafe_allow_html=True)
+    cust_colors = [C["orange"] if v==max(cust_list) else C["purple"] for v in cust_list]
+    st.plotly_chart(bar_chart(labs, cust_list, cust_colors), use_container_width=True, config={"displayModeBar":False})
+with tc4:
+    st.markdown('<div class="c-title">Depozit vs ÃÄ±xarÄ±Å (â¼M)</div>', unsafe_allow_html=True)
+    fig_dw = go.Figure()
+    fig_dw.add_trace(go.Bar(x=labs, y=dep_list, name="Depozit", marker_color=C["green"],  marker_line_width=0))
+    fig_dw.add_trace(go.Bar(x=labs, y=wd_list,  name="ÃÄ±xarÄ±Å", marker_color=C["orange"], marker_line_width=0))
+    fig_dw.update_layout(**{**PL,"height":260,"showlegend":True,"barmode":"group",
+                            "legend":dict(orientation="h",y=1.12,bgcolor="rgba(0,0,0,0)")})
+    st.plotly_chart(fig_dw, use_container_width=True, config={"displayModeBar":False})
 
-c1, c2 = st.columns(2)
-with c1:
-    st.markdown('<div class="c-title">Dövriyyə (Turnover)</div>'
-                '<div class="c-sub">AZN milyon · Son ay vurğulanır</div>',
-                unsafe_allow_html=True)
-    bar_clrs = [
-        "rgba(16,217,138,0.85)" if i == len(to_list) - 1
-        else "rgba(61,155,255,0.45)"
-        for i in range(len(to_list))
-    ]
-    fig = bar_chart(months_short, to_list, bar_clrs, {"prefix": "₼", "suffix": "M"})
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-with c2:
-    st.markdown('<div class="c-title">GGR &amp; Payout Ratio</div>'
-                '<div class="c-sub">Yaşıl sütun: GGR · Narıncı xətt: Payout% · Benchmark: 77%</div>',
-                unsafe_allow_html=True)
-    fig2 = bar_line_chart(
-        months_short, ggr_list, pr_list,
-        "GGR (₼M)", "Payout %",
-        "rgba(16,217,138,0.5)", C["orange"],
-        y2_range=[68, 86],
-    )
-    st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
-
-c3, c4 = st.columns(2)
-with c3:
-    st.markdown('<div class="c-title">Aktiv Müştəri Sayı</div>'
-                '<div class="c-sub">Unikal oyuncu · aylıq</div>',
-                unsafe_allow_html=True)
-    fig3 = line_chart(months_short, cust_list, C["blue"])
-    st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
-
-with c4:
-    st.markdown('<div class="c-title">Depozit vs Çıxarış</div>'
-                '<div class="c-sub">AZN milyon · Mavi: Depozit · Narıncı: Çıxarış</div>',
-                unsafe_allow_html=True)
-    fig4 = grouped_bar(
-        months_short, dep_list, wd_list,
-        "Depozit", "Çıxarış",
-        "rgba(61,155,255,0.6)", "rgba(255,112,67,0.5)",
-    )
-    st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False})
-
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # MONTHLY TABLE
-# ─────────────────────────────────────────────
-section("Aylıq Tam Cədvəl")
+# âââââââââââââââââââââââââââââââââââââââââââââ
+section(st.session_state.title_table)
 
-best_ggr = max(kpi_data[p]["ggr"] for p in sorted_kpi)
-rows_html = ""
-for p in sorted_kpi:
-    d    = kpi_data[p]
-    pr   = d["payout_ratio"] * 100
-    ggr  = d["ggr"] / 1e6
-    dratio = d["deposits"] / d["withdrawals"] if d["withdrawals"] else 0
-    pr_cls  = "vr" if pr > 79 else ("vy" if pr > 77.5 else "vg")
-    ggr_cls = "vr" if ggr < 5  else ("vy" if ggr < 6   else "vg")
-    best    = d["ggr"] == best_ggr
-    row_bg  = f"background:rgba(16,217,138,0.05)" if best else ""
-    name_style = f"color:{C['green']}" if best else f"color:{C['white']}"
-    rows_html += f"""
-    <tr style="{row_bg}">
-        <td style="{name_style}">{d['label']}{'&nbsp;🏆' if best else ''}</td>
+def pcls(v):
+    return "vg" if v<75 else ("vy" if v<79 else "vr")
+
+rows = ""
+for p in sel:
+    d = kpi_d[p]
+    rows += f"""<tr>
+        <td>{d['label']}</td>
+        <td>â¼{d['turnover']:.3f}M</td>
+        <td>â¼{d['ggr']:.3f}M</td>
+        <td class="{pcls(d['payout_ratio'])}">{d['payout_ratio']:.2f}%</td>
         <td>{d['users']:,}</td>
-        <td>₼{d['turnover']/1e6:.2f}M</td>
-        <td class="{ggr_cls}">₼{ggr:.2f}M</td>
-        <td class="{pr_cls}">{pr:.1f}%</td>
-        <td>₼{d['deposits']/1e6:.2f}M</td>
-        <td>₼{d['withdrawals']/1e6:.2f}M</td>
-        <td class="{'vg' if dratio>=1.8 else 'vy'}">{dratio:.2f}×</td>
+        <td>â¼{d['deposits']:.3f}M</td>
+        <td>â¼{d['withdrawals']:.3f}M</td>
         <td>{d['tickets']:,}</td>
-        <td>₼{d['turnover']/d['users']:,.0f}</td>
+        <td class="vr">{d['risk_users']:,}</td>
     </tr>"""
 
 st.markdown(f"""
-<div style="background:{C['card']};border:1px solid {C['border']};border-radius:12px;
-            overflow:hidden;overflow-x:auto">
-<table class="styled-table">
-<thead><tr>
-    <th>Ay</th><th>Müştəri</th><th>Dövriyyə</th><th>GGR</th>
-    <th>Payout%</th><th>Depozit</th><th>Çıxarış</th>
-    <th>Dep/Wd</th><th>Ticketlər</th><th>Ort. TO/Müştəri</th>
-</tr></thead>
-<tbody>{rows_html}</tbody>
-</table></div>
+<div style="background:{C['card']};border:1px solid {C['border']};border-radius:12px;overflow:hidden;overflow-x:auto">
+<table class="styled-table"><thead><tr>
+    <th>Ay</th><th>DÃ¶vriyyÉ</th><th>GGR</th><th>Payout %</th>
+    <th>MÃ¼ÅtÉri</th><th>Depozit</th><th>ÃÄ±xarÄ±Å</th><th>Ticket</th><th>Riskli</th>
+</tr></thead><tbody>{rows}</tbody></table>
+</div>
 """, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # RETENTION
-# ─────────────────────────────────────────────
-if len(sorted_kpi) >= 2:
-    section("Müştəri Saxlanılması — Retention Analizi")
-
-    ret_data = []
-    for i in range(len(sorted_kpi) - 1):
-        p1, p2 = sorted_kpi[i], sorted_kpi[i + 1]
-        u1 = set(kpi_users.get(p1, pd.DataFrame()).get("user_id", pd.Series()).values)
-        u2 = set(kpi_users.get(p2, pd.DataFrame()).get("user_id", pd.Series()).values)
-        if not u1:
-            continue
-        retained = u1 & u2
-        rate  = len(retained) / len(u1) * 100
-        new_u = len(u2 - u1)
-        churn = len(u1 - u2)
-        short = (f"{kpi_data[p1]['label'].split()[0][:3]}→"
-                 f"{kpi_data[p2]['label'].split()[0][:3]}")
-        ret_data.append(dict(label=short, rate=rate, new=new_u, churn=churn))
-
-    n_cols = min(len(ret_data), 8)
-    ret_cols = st.columns(n_cols) if n_cols > 0 else []
-    for i, rd in enumerate(ret_data[:n_cols]):
-        pct_clr = (C["green"] if rd["rate"] >= 85
-                   else C["yellow"] if rd["rate"] >= 82
-                   else C["orange"])
-        border = (f"border-color:rgba(240,62,62,0.35)"
-                  if rd["churn"] > rd["new"] else "")
-        with ret_cols[i]:
+# âââââââââââââââââââââââââââââââââââââââââââââ
+ret_periods = [p for p in sel if p in ret_d]
+if ret_periods:
+    section(st.session_state.title_ret)
+    ret_cols = st.columns(min(len(ret_periods), 8))
+    for col, p in zip(ret_cols, ret_periods):
+        r = ret_d[p]
+        color = C["green"] if r["rate"]>=85 else (C["yellow"] if r["rate"]>=80 else C["red"])
+        with col:
             st.markdown(f"""
-            <div class="ret-card" style="{border}">
-                <div class="ret-per">{rd['label']}</div>
-                <div class="ret-pct" style="color:{pct_clr}">{rd['rate']:.1f}%</div>
-                <div class="ret-new">+{rd['new']:,} yeni</div>
-                <div class="ret-churn">−{rd['churn']:,} çıxdı</div>
+            <div class="ret-card">
+                <div class="ret-per">{kpi_d[p]['label']}</div>
+                <div class="ret-pct" style="color:{color}">{r['rate']}%</div>
+                <div class="ret-new">+{r['new']:,} yeni</div>
+                <div class="ret-churn">-{r['churned']:,} Ã§Ä±xdÄ±</div>
             </div>""", unsafe_allow_html=True)
 
-    if ret_data:
-        rc1, rc2 = st.columns(2)
-        rl = [r["label"] for r in ret_data]
-        rr = [r["rate"]  for r in ret_data]
-        pclrs = [C["green"] if v >= 85 else (C["yellow"] if v >= 82 else C["orange"])
-                 for v in rr]
+    st.markdown("<br>", unsafe_allow_html=True)
+    ret_labs  = [kpi_d[p]["label"] for p in ret_periods]
+    ret_rates = [ret_d[p]["rate"]  for p in ret_periods]
+    ret_clrs  = [C["green"] if v>=85 else (C["yellow"] if v>=80 else C["red"]) for v in ret_rates]
+    st.plotly_chart(bar_chart(ret_labs, ret_rates, ret_clrs, height=220),
+                    use_container_width=True, config={"displayModeBar":False})
 
-        with rc1:
-            st.markdown('<div class="c-title">Retention Faizi Trendi</div>',
-                        unsafe_allow_html=True)
-            fig_r = go.Figure(go.Scatter(
-                x=rl, y=rr,
-                line=dict(color=C["green"], width=2.5),
-                mode="lines+markers",
-                marker=dict(size=7, color=pclrs),
-                fill="tozeroy", fillcolor="rgba(16,217,138,0.07)",
-            ))
-            layout_r = {**PL, "height": 220,
-                        "yaxis": {**PL.get("yaxis", {}), "range": [72, 93],
-                                  "ticksuffix": "%"}}
-            fig_r.update_layout(**layout_r, showlegend=False)
-            st.plotly_chart(fig_r, use_container_width=True,
-                            config={"displayModeBar": False})
-
-        with rc2:
-            st.markdown('<div class="c-title">Yeni Müştəri vs Churn</div>',
-                        unsafe_allow_html=True)
-            fig_ch = go.Figure()
-            fig_ch.add_trace(go.Bar(x=rl, y=[r["new"]   for r in ret_data],
-                                    name="Yeni Müştəri",
-                                    marker_color="rgba(16,217,138,0.55)",
-                                    marker_line_width=0))
-            fig_ch.add_trace(go.Bar(x=rl, y=[r["churn"] for r in ret_data],
-                                    name="Churn",
-                                    marker_color="rgba(255,112,67,0.5)",
-                                    marker_line_width=0))
-            layout_ch = {**PL, "height": 220, "barmode": "group",
-                         "legend": dict(orientation="h", y=1.12,
-                                        bgcolor="rgba(0,0,0,0)")}
-            fig_ch.update_layout(**layout_ch, showlegend=True)
-            st.plotly_chart(fig_ch, use_container_width=True,
-                            config={"displayModeBar": False})
-
-# ─────────────────────────────────────────────
-# CUSTOMER VALUE (PARETO) — latest month
-# ─────────────────────────────────────────────
-latest_p = sorted_kpi[-1]
-if latest_p in kpi_users and not kpi_users[latest_p].empty:
-    section(f"Müştəri Dəyər Analizi — {kpi_data[latest_p]['label']}")
-    udf = kpi_users[latest_p].copy()
-    total_to_m = udf["turnover"].sum()
-
-    if total_to_m > 0:
-        n = len(udf)
-        top1  = udf.nlargest(max(1, int(n * 0.01)), "turnover")
-        top5  = udf.nlargest(max(1, int(n * 0.05)), "turnover")
-        top10 = udf.nlargest(max(1, int(n * 0.10)), "turnover")
-        bot50 = udf.nsmallest(max(1, int(n * 0.50)), "turnover")
-        low   = udf[udf["turnover"] < 100]
-
-        pct1   = top1["turnover"].sum()  / total_to_m * 100
-        pct5   = top5["turnover"].sum()  / total_to_m * 100
-        pct10  = top10["turnover"].sum() / total_to_m * 100
-        pct_b  = bot50["turnover"].sum() / total_to_m * 100
-        pct_lw = len(low) / n * 100
-        avg_to = udf["turnover"].mean()
-        med_to = udf["turnover"].median()
-
-        bars = [
-            (f"Top 1% — {len(top1):,} nəfər",   pct1,   C["red"]),
-            (f"Top 5% — {len(top5):,} nəfər",   pct5,   C["orange"]),
-            (f"Top 10% — {len(top10):,} nəfər", pct10,  C["yellow"]),
-            (f"Bottom 50% — {len(bot50):,} nəfər", pct_b, C["dim"]),
-            (f"<₼100 TO — {len(low):,} nəfər",  pct_lw, C["border"]),
-        ]
-        bars_html = "".join(f"""
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px">
-            <span style="font-size:13px;color:{C['light']};font-weight:500;width:210px;flex-shrink:0">{lbl}</span>
-            <div style="flex:1;height:10px;background:{C['card2']};border-radius:5px;overflow:hidden">
-                <div style="width:{min(pct,100):.1f}%;height:100%;background:{clr};border-radius:5px"></div>
-            </div>
-            <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14px;
-                         color:{clr};width:50px;text-align:right">{pct:.1f}%</span>
-        </div>""" for lbl, pct, clr in bars)
-
-        pc1, pc2 = st.columns([3, 2])
-        with pc1:
-            st.markdown(f"""
-            <div style="background:rgba(240,62,62,0.04);border:1px solid rgba(240,62,62,0.3);
-                        border-radius:12px;padding:24px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
-                    <span style="font-size:18px">⚠️</span>
-                    <div style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;
-                                color:{C['white']}">KRİTİK: Müştəri Konsentrasiya Riski</div>
-                </div>
-                {bars_html}
-                <div style="display:flex;gap:20px;margin-top:18px;padding:14px;
-                            background:{C['card']};border-radius:8px">
-                    <div>
-                        <div style="font-size:11px;color:{C['muted']};font-weight:600;
-                                    text-transform:uppercase;letter-spacing:.06em">Orta TO</div>
-                        <div style="font-family:'Outfit',sans-serif;font-size:20px;
-                                    font-weight:800;color:{C['white']}">₼{avg_to:,.0f}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:11px;color:{C['muted']};font-weight:600;
-                                    text-transform:uppercase;letter-spacing:.06em">Median TO</div>
-                        <div style="font-family:'Outfit',sans-serif;font-size:20px;
-                                    font-weight:800;color:{C['yellow']}">₼{med_to:,.0f}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:11px;color:{C['muted']};font-weight:600;
-                                    text-transform:uppercase;letter-spacing:.06em">Fərq</div>
-                        <div style="font-family:'Outfit',sans-serif;font-size:20px;
-                                    font-weight:800;color:{C['red']}">{avg_to/med_to:.1f}×</div>
-                    </div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        with pc2:
-            st.markdown('<div class="c-title">Dövriyyə Paylanması</div>'
-                        '<div class="c-sub">Pareto vizualizasiyası</div>',
-                        unsafe_allow_html=True)
-            fig_p = donut_chart(
-                [f"Top 1% ({len(top1):,})",
-                 f"2–5% ({len(top5)-len(top1):,})",
-                 f"6–10% ({len(top10)-len(top5):,})",
-                 f"11–50% ({int(n*0.5)-len(top10):,})",
-                 f"Bottom 50% ({len(bot50):,})"],
-                [pct1, pct5 - pct1, pct10 - pct5,
-                 100 - pct10 - pct_b, pct_b],
-                [C["red"], C["orange"], C["yellow"], C["blue"], C["dim"]],
-            )
-            st.plotly_chart(fig_p, use_container_width=True,
-                            config={"displayModeBar": False})
-
-# ─────────────────────────────────────────────
-# GGR RISK — latest month
-# ─────────────────────────────────────────────
-if latest_p in kpi_users:
-    udf = kpi_users[latest_p].copy()
-    pos = udf[udf["ggr"] > 0]
-    neg = udf[udf["ggr"] <= 0]
-    over100 = udf[udf["payout_ratio"] > 1.0]
-
-    if len(neg) > 0:
-        section(f"Risk Analizi — {kpi_data[latest_p]['label']}")
-        rr1, rr2, rr3 = st.columns(3)
-
-        pos_pct = len(pos) / len(udf) * 100
-        neg_pct = len(neg) / len(udf) * 100
-
-        with rr1:
-            st.markdown(f"""
-            <div style="background:{C['card']};border:1px solid {C['border']};
-                        border-radius:12px;padding:22px;height:100%">
-                <div style="font-family:'Outfit',sans-serif;font-size:15px;
-                            font-weight:700;margin-bottom:16px">GGR Risk Profili</div>
-                <div style="margin-bottom:12px">
-                    <div style="font-size:12px;color:{C['muted']};margin-bottom:5px">
-                        Müsbət GGR — {pos_pct:.1f}% müştəri</div>
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <div style="flex:1;height:10px;background:{C['card2']};border-radius:5px">
-                            <div style="width:{pos_pct:.0f}%;height:100%;
-                                        background:{C['green']};border-radius:5px"></div>
-                        </div>
-                        <span style="font-family:'Outfit',sans-serif;font-weight:700;
-                                     color:{C['green']}">₼{pos['ggr'].sum()/1000:,.0f}K</span>
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:12px;color:{C['muted']};margin-bottom:5px">
-                        Mənfi GGR — {neg_pct:.1f}% müştəri</div>
-                    <div style="display:flex;align-items:center;gap:10px">
-                        <div style="flex:1;height:10px;background:{C['card2']};border-radius:5px">
-                            <div style="width:{neg_pct:.0f}%;height:100%;
-                                        background:{C['red']};border-radius:5px"></div>
-                        </div>
-                        <span style="font-family:'Outfit',sans-serif;font-weight:700;
-                                     color:{C['red']}">₼{neg['ggr'].sum()/1000:,.0f}K</span>
-                    </div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-        with rr2:
-            st.markdown('<div class="c-title">GGR Komponentləri</div>',
-                        unsafe_allow_html=True)
-            fig_rc = go.Figure(go.Bar(
-                x=["Müsbət GGR", "Mənfi GGR"],
-                y=[pos["ggr"].sum() / 1000, neg["ggr"].sum() / 1000],
-                marker_color=["rgba(16,217,138,0.55)", "rgba(240,62,62,0.55)"],
-                marker_line_color=[C["green"], C["red"]], marker_line_width=1.5,
-            ))
-            layout_rc = {**PL, "height": 200}
-            fig_rc.update_layout(**layout_rc, showlegend=False)
-            st.plotly_chart(fig_rc, use_container_width=True,
-                            config={"displayModeBar": False})
-
-        with rr3:
-            st.markdown(f"""
-            <div style="background:rgba(240,62,62,0.04);
-                        border:1px solid rgba(240,62,62,0.35);
-                        border-radius:12px;padding:22px;height:100%">
-                <div style="font-size:22px;margin-bottom:8px">🚨</div>
-                <div style="font-family:'Outfit',sans-serif;font-size:15px;
-                            font-weight:700;margin-bottom:12px">Payout &gt;100% Müştərilər</div>
-                <div style="font-family:'Outfit',sans-serif;font-size:28px;
-                            font-weight:800;color:{C['red']};margin-bottom:4px">{len(over100):,}</div>
-                <div style="font-size:12px;color:{C['muted']};margin-bottom:12px">
-                    müştəri şirkətin ziyanına oynayır</div>
-                <div style="font-size:13px;color:{C['light']};line-height:1.75">
-                    Onların turnover-i:
-                    <strong style="color:{C['white']}">₼{over100['turnover'].sum()/1e6:.2f}M</strong><br>
-                    Neqativ GGR:
-                    <strong style="color:{C['red']}">₼{over100['ggr'].sum()/1000:,.0f}K</strong>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # FREEBET
-# ─────────────────────────────────────────────
-if fb_data:
-    sorted_fb   = sorted(fb_data.keys())
-    fb_m_short  = [fb_data[p]["label"].split()[0][:3] for p in sorted_fb]
-    fb_given    = [fb_data[p]["given"]        / 1000 for p in sorted_fb]
-    fb_pr       = [fb_data[p]["payout_ratio"] * 100  for p in sorted_fb]
-    fb_usage    = [(fb_data[p]["used"] / fb_data[p]["given"] * 100
-                    if fb_data[p]["given"] > 0 else 0) for p in sorted_fb]
+# âââââââââââââââââââââââââââââââââââââââââââââ
+if fb_d:
+    section(st.session_state.title_fb)
+    fb_labs  = [fb_d[p]["label"]        for p in sel if p in fb_d]
+    fb_given = [fb_d[p]["given"]        for p in sel if p in fb_d]
+    fb_used  = [fb_d[p]["used"]         for p in sel if p in fb_d]
+    fb_pr    = [fb_d[p]["payout_ratio"] for p in sel if p in fb_d]
 
-    section("Freebet Analizi")
+    fb1, fb2 = st.columns(2)
+    with fb1:
+        st.markdown('<div class="c-title">Freebet VerilÉn vs Ä°stifadÉ (â¼M)</div>', unsafe_allow_html=True)
+        fig_fb = go.Figure()
+        fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_given, name="VerilÉn",   marker_color=C["purple"], marker_line_width=0))
+        fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_used,  name="Ä°stifadÉ", marker_color=C["blue"],   marker_line_width=0))
+        fig_fb.update_layout(**{**PL,"height":250,"showlegend":True,"barmode":"group",
+                                "legend":dict(orientation="h",y=1.12,bgcolor="rgba(0,0,0,0)")})
+        st.plotly_chart(fig_fb, use_container_width=True, config={"displayModeBar":False})
+    with fb2:
+        st.markdown('<div class="c-title">Freebet Payout Ratio (%)</div>', unsafe_allow_html=True)
+        fb_clrs = [C["red"] if v>47 else C["green"] for v in fb_pr]
+        st.plotly_chart(bar_chart(fb_labs, fb_pr, fb_clrs, height=250),
+                        use_container_width=True, config={"displayModeBar":False})
 
-    fc1, fc2 = st.columns(2)
-    with fc1:
-        st.markdown('<div class="c-title">Freebet Verilmiş Məbləğ</div>'
-                    '<div class="c-sub">₼K · Son ay vurğulanır</div>',
-                    unsafe_allow_html=True)
-        fb_clrs = ["rgba(255,193,61,0.85)" if i == len(fb_given) - 1
-                   else "rgba(255,112,67,0.45)" for i in range(len(fb_given))]
-        fig_fb = bar_chart(fb_m_short, fb_given, fb_clrs, {"prefix": "₼", "suffix": "K"})
-        st.plotly_chart(fig_fb, use_container_width=True,
-                        config={"displayModeBar": False})
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# CLAUDE AI SECTION
+# âââââââââââââââââââââââââââââââââââââââââââââ
+section(st.session_state.title_ai)
 
-    with fc2:
-        st.markdown('<div class="c-title">Freebet Payout % &amp; İstifadə %</div>'
-                    '<div class="c-sub">Narıncı: Payout · Mavi: İstifadə dərəcəsi</div>',
-                    unsafe_allow_html=True)
-        fig_fb2 = go.Figure()
-        fig_fb2.add_trace(go.Scatter(
-            x=fb_m_short, y=fb_pr, name="Payout %",
-            line=dict(color=C["orange"], width=2.5), mode="lines+markers",
-            marker=dict(size=6)))
-        fig_fb2.add_trace(go.Scatter(
-            x=fb_m_short, y=fb_usage, name="İstifadə %",
-            line=dict(color=C["blue"], width=2.5), mode="lines+markers",
-            marker=dict(size=6)))
-        layout_fb2 = {**PL, "height": 260, "showlegend": True,
-                      "legend": dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)")}
-        fig_fb2.update_layout(**layout_fb2)
-        st.plotly_chart(fig_fb2, use_container_width=True,
-                        config={"displayModeBar": False})
+def build_prompt():
+    lines = [
+        f"SÉn Etopaz platformasÄ±nÄ±n (AzÉrbaycan) analitika ekspertisÉn.",
+        f"AÅaÄÄ±dakÄ± {len(sel)} aylÄ±q real mÉlumatÄ± analiz et. AzÉrbaycanca dÉrin, konkret, rÉqÉmlÉrÉ Ésaslanan analiz ver.\n",
+        f"=== DÃVR: {labs[0]} â {labs[-1]} ===",
+        f"Ãmumi dÃ¶vriyyÉ: â¼{total_to:.2f}M",
+        f"Ãmumi GGR: â¼{total_ggr:.2f}M  |  Margin: {total_ggr/total_to*100:.1f}%",
+        f"Ortalama payout ratio: {avg_pr:.2f}%",
+        f"Son ay payout: {last_pr:.2f}%  {'â ï¸ KRÄ°TÄ°K â 78% hÉddi aÅÄ±lÄ±b!' if last_pr>78 else 'â Normal'}",
+        f"MÃ¼ÅtÉri: {cust_list[0]:,} â {cust_list[-1]:,}  (MoM: {cust_mom:+.1f}%)",
+        f"Depozit: â¼{total_dep:.2f}M  |  ÃÄ±xarÄ±Å: â¼{total_wd:.2f}M  |  NisbÉt: {dep_wd_r:.2f}Ã\n",
+        "=== AYLIK MÆLUMAT ===",
+    ]
+    for p in sel:
+        d = kpi_d[p]
+        lines.append(f"{d['label']}: TO=â¼{d['turnover']:.2f}M  GGR=â¼{d['ggr']:.2f}M  PR={d['payout_ratio']:.1f}%  USR={d['users']:,}  RISK={d['risk_users']:,}")
+    if ret_d:
+        lines.append("\n=== RETENTION ===")
+        for p in ret_periods:
+            r = ret_d[p]
+            lines.append(f"{kpi_d[p]['label']}: Retention={r['rate']}%  Yeni={r['new']:,}  Churn={r['churned']:,}")
+    if fb_d:
+        lines.append("\n=== FREEBET ===")
+        for p in sel:
+            if p in fb_d:
+                f2 = fb_d[p]
+                lines.append(f"{f2['label']}: VerilÉn=â¼{f2['given']:.3f}M  Ä°stifadÉ=â¼{f2['used']:.3f}M  FB_PR={f2['payout_ratio']:.1f}%")
+    lines.append("""
+=== ANALÄ°Z STRUKTURU ===
+AÅaÄÄ±dakÄ± 4 bÃ¶lmÉ Ã¼zrÉ analiz ver. HÉr bÃ¶lmÉ 4-5 cÃ¼mlÉ olsun. Konkret rÉqÉmlÉr istifadÉ et:
 
-    # Tier breakdown — latest FB month
-    latest_fb = sorted_fb[-1]
-    if latest_fb in fb_users_data and not fb_users_data[latest_fb].empty:
-        section(f"Tier Üzrə Freebet — {fb_data[latest_fb]['label']}")
-        fb_df = fb_users_data[latest_fb].copy()
-        tier_s = (fb_df.groupby("tier")
-                  .agg(count=("user_id", "count"), given=("given", "sum"))
-                  .reset_index())
-        tier_s["per_user"] = tier_s["given"] / tier_s["count"]
-        tier_s = tier_s[tier_s["given"] > 0].sort_values("per_user", ascending=False)
+1. ð Performans XÃ¼lasÉsi
+2. â ï¸ Kritik RisklÉr (payout, churn, riskli mÃ¼ÅtÉrilÉr)
+3. ð¡ Strateji TÃ¶vsiyÉlÉr (3 konkret addÄ±m)
+4. ð NÃ¶vbÉti Ay Proqnozu
+""")
+    return "\n".join(lines)
 
-        if not tier_s.empty:
-            t_colors = [TIER_COLORS.get(t, C["dim"]) for t in tier_s["tier"]]
-            fig_tier = go.Figure(go.Bar(
-                x=tier_s["tier"], y=tier_s["per_user"],
-                marker_color=t_colors, marker_line_width=0,
-                text=[f"₼{v:,.0f}" for v in tier_s["per_user"]],
-                textposition="outside",
-                textfont=dict(color=C["muted"], size=11),
-                customdata=tier_s["count"],
-                hovertemplate="<b>%{x}</b><br>Nəfər başına: ₼%{y:,.0f}<br>"
-                              "Müştəri sayı: %{customdata}<extra></extra>",
-            ))
-            layout_t = {**PL, "height": 300}
-            fig_tier.update_layout(**layout_t, showlegend=False)
-            st.plotly_chart(fig_tier, use_container_width=True,
-                            config={"displayModeBar": False})
+# API key
+api_key = ""
+try:
+    api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+except Exception:
+    pass
 
-# ─────────────────────────────────────────────
-# INSIGHTS
-# ─────────────────────────────────────────────
-section("Güclü Tərəflər")
-ig1, ig2, ig3 = st.columns(3)
-ins_pos = [
-    ("🚀", "Sürətli Böyümə",
-     f"OMT keçidindən <strong>{len(sorted_kpi)} ayda</strong> müştəri sayı "
-     f"<span class='hi'>{cust_list[0]:,}</span>-dən "
-     f"<span class='hi'>{cust_list[-1]:,}</span>-ə çatdı. "
-     f"Dövriyyə ₼{to_list[0]:.1f}M-dan ₼{to_list[-1]:.1f}M-a artdı."),
-    ("💰", "Sağlam Depozit Nisbəti",
-     f"Depozit/Çıxarış nisbəti <span class='hi'>{dep_wd_r:.2f}×</span>. "
-     "Müştərilər qoyduqlarından az çıxarır — "
-     "<strong>sağlam müştəri davranışı</strong>."),
-    ("📈", "Ticket Sayı Artımı",
-     f"Aylıq ticket sayı <span class='hi'>{tk_list[0]:,}</span>-dən "
-     f"<span class='hi'>{tk_list[-1]:,}</span>-ə çatdı. "
-     "Oyunçular <strong>daha aktiv</strong> mərc edir."),
-]
-for col, (icon, title, text) in zip([ig1, ig2, ig3], ins_pos):
-    with col:
+if st.session_state.admin_mode and not api_key:
+    api_key = st.text_input("ð Anthropic API AÃ§arÄ±",
+                            type="password", placeholder="sk-ant-...", key="api_key_input")
+
+btn_col, info_col = st.columns([2, 8])
+with btn_col:
+    run_ai = st.button("ð¤ AI Analiz Et", type="primary", disabled=not bool(api_key))
+with info_col:
+    if not api_key:
         st.markdown(
-            f'<div class="insight pos"><div class="insight-icon">{icon}</div>'
-            f'<h4>{title}</h4><p>{text}</p></div>',
-            unsafe_allow_html=True,
-        )
+            f'<div style="color:{C["muted"]};font-size:12.5px;padding-top:10px">'
+            f'Claude AI analizi Ã¼Ã§Ã¼n admin modunda API aÃ§arÄ±nÄ± daxil edin.</div>',
+            unsafe_allow_html=True)
 
-section("Zəif Tərəflər &amp; Risklər")
-iw1, iw2, iw3 = st.columns(3)
-ins_neg = [
-    ("⚠️", "Payout Ratio",
-     f"Son ay payout: <span class='dng'>{last_pr:.1f}%</span>. Benchmark 77%. "
-     + ("Həddindən yuxarıdır — <strong>limit management dərhal lazımdır</strong>."
-        if last_pr > 78 else "Hələlik normal aralıqdadır, izlənilməlidir.")),
-    ("🔄", "Churn Artımı",
-     "Aylıq churn artım tendensiyası göstərir. "
-     "<strong>Win-Back kampaniyası</strong> — 100% depozit bonusu + "
-     "tier-based cap + 3× rollover modeli tətbiq edilməlidir."),
-    ("💎", "VIP Konsentrasiya Riski",
-     "Top 1% müştəri aylıq dövriyyənin <span class='dng'>50%+</span>-ini yaradır. "
-     "Bu müştərilər üçün <strong>şəxsi hesab meneceri</strong> və "
-     "xüsusi freebet proqramı vacibdir."),
-]
-for col, (icon, title, text) in zip([iw1, iw2, iw3], ins_neg):
-    with col:
-        st.markdown(
-            f'<div class="insight alert"><div class="insight-icon">{icon}</div>'
-            f'<h4>{title}</h4><p>{text}</p></div>',
-            unsafe_allow_html=True,
-        )
+if run_ai and api_key:
+    with st.spinner("Claude analiz edir..."):
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key)
+            msg = client.messages.create(
+                model="claude-opus-4-5-20251101",
+                max_tokens=1800,
+                messages=[{"role": "user", "content": build_prompt()}]
+            )
+            st.session_state.ai_result = msg.content[0].text
+        except Exception as e:
+            st.session_state.ai_result = f"â XÉta: {e}"
 
-# ─────────────────────────────────────────────
+if st.session_state.ai_result:
+    st.markdown(f"""
+    <div class="ai-box">
+        <h3>ð¤ Claude AI Analizi â {labs[0]} â {labs[-1]}</h3>
+        <div class="ai-content">{st.session_state.ai_result}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# âââââââââââââââââââââââââââââââââââââââââââââ
 # FOOTER
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
 st.markdown(f"""
 <div style="margin-top:60px;padding-top:20px;border-top:1px solid {C['border']};
             text-align:center;font-size:11px;color:{C['dim']};
             letter-spacing:.07em;text-transform:uppercase">
-    Etopaz Platform Analytics &nbsp;·&nbsp;
-    OMT Dövrü &nbsp;·&nbsp; Mart 2026 &nbsp;·&nbsp; Nicat Dünyamaliyev
+    Etopaz Platform Analytics &nbsp;Â·&nbsp; OMT DÃ¶vrÃ¼ &nbsp;Â·&nbsp; Mart 2026
 </div>
 """, unsafe_allow_html=True)
+
