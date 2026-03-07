@@ -1,5 +1,5 @@
 """
-Etopaz Platform Analytics â Static Dashboard
+Etopaz Platform Analytics — Static Dashboard
 No file upload required. Data is pre-loaded.
 Claude AI insights integrated.
 """
@@ -8,19 +8,19 @@ import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # PAGE CONFIG
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 st.set_page_config(
     page_title="Etopaz Platform Analytics",
-    page_icon="ð",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # COLOURS
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 C = {
     "bg":      "#0d0f14",
     "card":    "#13161d",
@@ -53,9 +53,9 @@ PL = dict(
     height=260,
 )
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # CSS
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap');
@@ -128,12 +128,12 @@ div[data-testid="stTextInput"] label {{ color:{C['muted']} !important; font-size
 </style>
 """, unsafe_allow_html=True)
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
-# HARDCODED DATA  (Jun 2025 â Feb 2026)
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
+# HARDCODED DATA  (Jun 2025 – Feb 2026)
+# ─────────────────────────────────────────────
 RAW_KPI = {
-    "2025-06": {"label":"Ä°yun 2025",     "turnover":6.041,  "ggr":1.373, "payout_ratio":77.28, "deposits":2.744,  "withdrawals":1.44,  "tickets":324681,  "users":10315, "risk_users":1097, "pareto_top1_pct":40.2, "pareto_top1_count":103},
-    "2025-07": {"label":"Ä°yul 2025",     "turnover":18.107, "ggr":4.295, "payout_ratio":76.28, "deposits":8.59,   "withdrawals":4.286, "tickets":970138,  "users":14412, "risk_users":1297, "pareto_top1_pct":43.1, "pareto_top1_count":144},
+    "2025-06": {"label":"İyun 2025",     "turnover":6.041,  "ggr":1.373, "payout_ratio":77.28, "deposits":2.744,  "withdrawals":1.44,  "tickets":324681,  "users":10315, "risk_users":1097, "pareto_top1_pct":40.2, "pareto_top1_count":103},
+    "2025-07": {"label":"İyul 2025",     "turnover":18.107, "ggr":4.295, "payout_ratio":76.28, "deposits":8.59,   "withdrawals":4.286, "tickets":970138,  "users":14412, "risk_users":1297, "pareto_top1_pct":43.1, "pareto_top1_count":144},
     "2025-08": {"label":"Avqust 2025",   "turnover":24.231, "ggr":6.098, "payout_ratio":74.83, "deposits":12.035, "withdrawals":5.972, "tickets":1384050, "users":17890, "risk_users":1308, "pareto_top1_pct":41.3, "pareto_top1_count":178},
     "2025-09": {"label":"Sentyabr 2025", "turnover":26.783, "ggr":5.721, "payout_ratio":78.64, "deposits":13.225, "withdrawals":7.347, "tickets":1498410, "users":20802, "risk_users":2430, "pareto_top1_pct":45.6, "pareto_top1_count":208},
     "2025-10": {"label":"Oktyabr 2025",  "turnover":28.156, "ggr":6.791, "payout_ratio":75.88, "deposits":14.187, "withdrawals":7.39,  "tickets":1765156, "users":24247, "risk_users":2234, "pareto_top1_pct":42.1, "pareto_top1_count":242},
@@ -153,8 +153,8 @@ RAW_RET = {
     "2026-02": {"rate":81.0,"new":6768, "churned":5154,"retained":21902},
 }
 RAW_FB = {
-    "2025-06": {"label":"Ä°yun 2025",     "given":0.12,  "used":0.084, "fb_payout":0.033, "payout_ratio":38.71},
-    "2025-07": {"label":"Ä°yul 2025",     "given":0.393, "used":0.359, "fb_payout":0.152, "payout_ratio":42.15},
+    "2025-06": {"label":"İyun 2025",     "given":0.12,  "used":0.084, "fb_payout":0.033, "payout_ratio":38.71},
+    "2025-07": {"label":"İyul 2025",     "given":0.393, "used":0.359, "fb_payout":0.152, "payout_ratio":42.15},
     "2025-08": {"label":"Avqust 2025",   "given":0.591, "used":0.557, "fb_payout":0.203, "payout_ratio":36.51},
     "2025-09": {"label":"Sentyabr 2025", "given":0.667, "used":0.661, "fb_payout":0.299, "payout_ratio":45.23},
     "2025-10": {"label":"Oktyabr 2025",  "given":0.79,  "used":0.678, "fb_payout":0.301, "payout_ratio":44.49},
@@ -167,30 +167,30 @@ RAW_FB = {
 ALL_PERIODS = sorted(RAW_KPI.keys())
 LABELS = {p: RAW_KPI[p]["label"] for p in ALL_PERIODS}
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # SESSION STATE
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 ADMIN_PASS = "etopaz2026"
 
 _defaults = {
     "admin_mode":    False,
     "title_main":    "Etopaz Platform Analytics",
-    "title_sub":     "OMT DÃ¶vrÃ¼  Â·  MÃ¼ÅtÉri SÉviyyÉsindÉ DÉrin Analiz",
-    "title_kpi":     "Æsas GÃ¶stIricilÉr",
-    "title_trend":   "AylÄ±q Trend Analizi",
-    "title_table":   "AylÄ±q Tam CÉdvÉl",
-    "title_ret":     "MÃ¼ÅtÉri SaxlanÄ±lmasÄ± â Retention",
+    "title_sub":     "OMT Dövrü  ·  Müştəri Səviyyəsində Dərin Analiz",
+    "title_kpi":     "Əsas Göstəricilər",
+    "title_trend":   "Aylıq Trend Analizi",
+    "title_table":   "Aylıq Tam Cədvəl",
+    "title_ret":     "Müştəri Saxlanılması — Retention",
     "title_fb":      "Freebet Analizi",
-    "title_ai":      "Claude AI â Etopaz AnalitikasÄ±",
+    "title_ai":      "Claude AI — Etopaz Analitikası",
     "ai_result":     "",
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # SIDEBAR
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 with st.sidebar:
     st.markdown(f"""
     <div style="padding:14px 0 18px">
@@ -206,54 +206,54 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("**ð Tarix AralÄ±ÄÄ±**")
+    st.markdown("**📅 Tarix Aralığı**")
     labels_all = [LABELS[p] for p in ALL_PERIODS]
-    start_i = st.selectbox("BaÅlanÄÄ±c", range(len(ALL_PERIODS)),
+    start_i = st.selectbox("Başlanğıc", range(len(ALL_PERIODS)),
                            format_func=lambda i: labels_all[i], key="s_start")
     end_i   = st.selectbox("Son ay",    range(len(ALL_PERIODS)),
                            format_func=lambda i: labels_all[i],
                            index=len(ALL_PERIODS)-1, key="s_end")
     if start_i > end_i:
-        st.error("BaÅlanÄÄ±c son aydan bÃ¶yÃ¼k ola bilmÉz!")
+        st.error("Başlanğıc son aydan böyøk ola bilməz!")
         sel = ALL_PERIODS[:]
     else:
         sel = ALL_PERIODS[start_i:end_i+1]
 
     st.divider()
-    st.markdown("**âï¸ Admin Modu**")
+    st.markdown("**⚙️ Admin Modu**")
     if not st.session_state.admin_mode:
-        pw = st.text_input("ÅifrÉ", type="password", placeholder="â¢â¢â¢â¢â¢â¢â¢â¢", key="pw_input")
+        pw = st.text_input("Şifrə", type="password", placeholder="••••••••", key="pw_input")
         if pw == ADMIN_PASS:
             st.session_state.admin_mode = True
             st.rerun()
         elif pw:
-            st.error("ÅifrÉ yanlÄ±ÅdÄ±r")
+            st.error("Şifrə yanlışdır")
     else:
-        st.success("â Admin modu aktiv")
-        if st.button("ÃÄ±xÄ±Å"):
+        st.success("✅ Admin modu aktiv")
+        if st.button("Çıxış"):
             st.session_state.admin_mode = False
             st.rerun()
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # ADMIN TITLE EDITOR
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 if st.session_state.admin_mode:
-    with st.expander("âï¸ BaÅlÄ±qlarÄ± RedaktÉ Et", expanded=False):
+    with st.expander("✏️ Başlıqları Redaktə Et", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            st.session_state.title_main  = st.text_input("Æsas baÅlÄ±q",        st.session_state.title_main,  key="e1")
-            st.session_state.title_sub   = st.text_input("Alt baÅlÄ±q",          st.session_state.title_sub,   key="e2")
-            st.session_state.title_kpi   = st.text_input("KPI bÃ¶lmÉsi",         st.session_state.title_kpi,   key="e3")
-            st.session_state.title_trend = st.text_input("Trend bÃ¶lmÉsi",       st.session_state.title_trend, key="e4")
+            st.session_state.title_main  = st.text_input("Əsas başlıq",        st.session_state.title_main,  key="e1")
+            st.session_state.title_sub   = st.text_input("Alt başlıq",          st.session_state.title_sub,   key="e2")
+            st.session_state.title_kpi   = st.text_input("KPI bölməsi",         st.session_state.title_kpi,   key="e3")
+            st.session_state.title_trend = st.text_input("Trend bölməsi",       st.session_state.title_trend, key="e4")
         with c2:
-            st.session_state.title_table = st.text_input("CÉdvÉl bÃ¶lmÉsi",      st.session_state.title_table, key="e5")
-            st.session_state.title_ret   = st.text_input("Retention bÃ¶lmÉsi",   st.session_state.title_ret,   key="e6")
-            st.session_state.title_fb    = st.text_input("Freebet bÃ¶lmÉsi",     st.session_state.title_fb,    key="e7")
-            st.session_state.title_ai    = st.text_input("AI bÃ¶lmÉsi baÅlÄ±ÄÄ±",  st.session_state.title_ai,    key="e8")
+            st.session_state.title_table = st.text_input("Cədvəl bölməsi",      st.session_state.title_table, key="e5")
+            st.session_state.title_ret   = st.text_input("Retention bölməsi",   st.session_state.title_ret,   key="e6")
+            st.session_state.title_fb    = st.text_input("Freebet bölməsi",     st.session_state.title_fb,    key="e7")
+            st.session_state.title_ai    = st.text_input("AI bölməsi başlığı",  st.session_state.title_ai,    key="e8")
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # HELPERS
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 def section(title):
     st.markdown(
         f'<div class="sec-head"><span>{title}</span><div class="sec-line"></div></div>',
@@ -280,7 +280,7 @@ def bar_line_chart(x, bar_y, line_y, bar_name, line_name,
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Bar(x=x, y=bar_y, name=bar_name,
                          marker_color=bar_color, marker_line_width=0,
-                         hovertemplate=f"<b>%{{x}}</b><br>{bar_name}: â¼%{{y:.2f}}M<extra></extra>"),
+                         hovertemplate=f"<b>%{{x}}</b><br>{bar_name}: ₼%{{y:.2f}}M<extra></extra>"),
                   secondary_y=False)
     fig.add_trace(go.Scatter(
         x=x, y=line_y, name=line_name,
@@ -297,9 +297,9 @@ def bar_line_chart(x, bar_y, line_y, bar_name, line_name,
     fig.update_layout(**layout)
     return fig
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # FILTER DATA
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 kpi_d  = {p: RAW_KPI[p] for p in sel}
 fb_d   = {p: RAW_FB[p]  for p in sel if p in RAW_FB}
 ret_d  = {p: RAW_RET[p] for p in sel if p in RAW_RET}
@@ -324,9 +324,9 @@ to_mom    = round((to_list[-1]/to_list[-2]-1)*100,1) if len(to_list)>1 else 0
 ggr_mom   = round((ggr_list[-1]/ggr_list[-2]-1)*100,1) if len(ggr_list)>1 else 0
 cust_mom  = round((cust_list[-1]/cust_list[-2]-1)*100,1) if len(cust_list)>1 else 0
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # HEADER
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 st.markdown(f"""
 <div style="padding-bottom:24px;border-bottom:1px solid {C['border']}">
     <div style="font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;
@@ -340,71 +340,71 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # KPI CARDS
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 section(st.session_state.title_kpi)
 k1,k2,k3,k4,k5 = st.columns(5)
 with k1:
-    kpi_card("Ãmumi DÃ¶vriyyÉ", f"â¼{total_to:.1f}M",
-             f"{len(sel)} ay Ã¼zrÉ",
-             f"{'â²' if to_mom>=0 else 'â¼'} {abs(to_mom):.1f}% son ay",
+    kpi_card("Ümumi Dövriyyə", f"₼{total_to:.1f}M",
+             f"{len(sel)} ay üzrə",
+             f"{'▲' if to_mom>=0 else '▼'} {abs(to_mom):.1f}% son ay",
              "up" if to_mom>=0 else "down", "green")
 with k2:
-    kpi_card("Ãmumi GGR", f"â¼{total_ggr:.1f}M",
+    kpi_card("Ümumi GGR", f"₼{total_ggr:.1f}M",
              f"Margin: {total_ggr/total_to*100:.1f}%",
-             f"{'â²' if ggr_mom>=0 else 'â¼'} {abs(ggr_mom):.1f}% son ay",
+             f"{'▲' if ggr_mom>=0 else '▼'} {abs(ggr_mom):.1f}% son ay",
              "up" if ggr_mom>=0 else "down", "blue")
 with k3:
     kpi_card("Son Ay Payout", f"{last_pr:.1f}%",
              f"Ortalama: {avg_pr:.1f}% | Benchmark: 77%",
-             "â  YÃ¼ksÉk" if last_pr>78 else "â Normal",
+             "⚠ Yüksək" if last_pr>78 else "✓ Normal",
              "warn" if last_pr>78 else "up",
              "red" if last_pr>78 else "yellow")
 with k4:
-    kpi_card("Son Ay MÃ¼ÅtÉri", f"{cust_list[-1]:,}",
-             f"Ä°lk ay: {cust_list[0]:,}",
-             f"{'â²' if cust_mom>=0 else 'â¼'} {abs(cust_mom):.1f}% son ay",
+    kpi_card("Son Ay Müştəri", f"{cust_list[-1]:,}",
+             f"İlk ay: {cust_list[0]:,}",
+             f"{'▲' if cust_mom>=0 else '▼'} {abs(cust_mom):.1f}% son ay",
              "up" if cust_mom>=0 else "down", "orange")
 with k5:
-    kpi_card("Depozit / ÃÄ±xarÄ±Å", f"â¼{total_dep:.1f}M",
-             f"ÃÄ±xarÄ±Å: â¼{total_wd:.1f}M",
-             f"NisbÉt: {dep_wd_r:.2f}Ã",
+    kpi_card("Depozit / Çıxarış", f"₼{total_dep:.1f}M",
+             f"Çıxarış: ₼{total_wd:.1f}M",
+             f"Nisbət: {dep_wd_r:.2f}×",
              "up", "green")
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # TREND CHARTS
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 section(st.session_state.title_trend)
 tc1, tc2 = st.columns(2)
 with tc1:
-    st.markdown('<div class="c-title">AylÄ±q DÃ¶vriyyÉ (â¼M)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="c-title">Aylıq Dövriyyə (₼M)</div>', unsafe_allow_html=True)
     to_colors = [C["green"] if v==max(to_list) else C["blue"] for v in to_list]
     st.plotly_chart(bar_chart(labs, to_list, to_colors), use_container_width=True, config={"displayModeBar":False})
 with tc2:
-    st.markdown('<div class="c-title">GGR (â¼M) vÉ Payout Ratio (%)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="c-title">GGR (₼M) və Payout Ratio (%)</div>', unsafe_allow_html=True)
     st.plotly_chart(
-        bar_line_chart(labs, ggr_list, pr_list, "GGR (â¼M)", "Payout %",
+        bar_line_chart(labs, ggr_list, pr_list, "GGR (₼M)", "Payout %",
                        C["blue"], C["yellow"], y2_range=[60,90]),
         use_container_width=True, config={"displayModeBar":False})
 
 tc3, tc4 = st.columns(2)
 with tc3:
-    st.markdown('<div class="c-title">Aktiv MÃ¼ÅtÉri SayÄ±</div>', unsafe_allow_html=True)
+    st.markdown('<div class="c-title">Aktiv Müştəri Sayı</div>', unsafe_allow_html=True)
     cust_colors = [C["orange"] if v==max(cust_list) else C["purple"] for v in cust_list]
     st.plotly_chart(bar_chart(labs, cust_list, cust_colors), use_container_width=True, config={"displayModeBar":False})
 with tc4:
-    st.markdown('<div class="c-title">Depozit vs ÃÄ±xarÄ±Å (â¼M)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="c-title">Depozit vs Çıxarış (₼M)</div>', unsafe_allow_html=True)
     fig_dw = go.Figure()
     fig_dw.add_trace(go.Bar(x=labs, y=dep_list, name="Depozit", marker_color=C["green"],  marker_line_width=0))
-    fig_dw.add_trace(go.Bar(x=labs, y=wd_list,  name="ÃÄ±xarÄ±Å", marker_color=C["orange"], marker_line_width=0))
+    fig_dw.add_trace(go.Bar(x=labs, y=wd_list,  name="Çıxarış", marker_color=C["orange"], marker_line_width=0))
     fig_dw.update_layout(**{**PL,"height":260,"showlegend":True,"barmode":"group",
                             "legend":dict(orientation="h",y=1.12,bgcolor="rgba(0,0,0,0)")})
     st.plotly_chart(fig_dw, use_container_width=True, config={"displayModeBar":False})
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # MONTHLY TABLE
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 section(st.session_state.title_table)
 
 def pcls(v):
@@ -415,12 +415,12 @@ for p in sel:
     d = kpi_d[p]
     rows += f"""<tr>
         <td>{d['label']}</td>
-        <td>â¼{d['turnover']:.3f}M</td>
-        <td>â¼{d['ggr']:.3f}M</td>
+        <td>₼{d['turnover']:.3f}M</td>
+        <td>₼{d['ggr']:.3f}M</td>
         <td class="{pcls(d['payout_ratio'])}">{d['payout_ratio']:.2f}%</td>
         <td>{d['users']:,}</td>
-        <td>â¼{d['deposits']:.3f}M</td>
-        <td>â¼{d['withdrawals']:.3f}M</td>
+        <td>₼{d['deposits']:.3f}M</td>
+        <td>₼{d['withdrawals']:.3f}M</td>
         <td>{d['tickets']:,}</td>
         <td class="vr">{d['risk_users']:,}</td>
     </tr>"""
@@ -428,15 +428,15 @@ for p in sel:
 st.markdown(f"""
 <div style="background:{C['card']};border:1px solid {C['border']};border-radius:12px;overflow:hidden;overflow-x:auto">
 <table class="styled-table"><thead><tr>
-    <th>Ay</th><th>DÃ¶vriyyÉ</th><th>GGR</th><th>Payout %</th>
-    <th>MÃ¼ÅtÉri</th><th>Depozit</th><th>ÃÄ±xarÄ±Å</th><th>Ticket</th><th>Riskli</th>
+    <th>Ay</th><th>Dövriyyə</th><th>GGR</th><th>Payout %</th>
+    <th>Müştəri</th><th>Depozit</th><th>Çıxarış</th><th>Ticket</th><th>Riskli</th>
 </tr></thead><tbody>{rows}</tbody></table>
 </div>
 """, unsafe_allow_html=True)
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # RETENTION
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 ret_periods = [p for p in sel if p in ret_d]
 if ret_periods:
     section(st.session_state.title_ret)
@@ -450,7 +450,7 @@ if ret_periods:
                 <div class="ret-per">{kpi_d[p]['label']}</div>
                 <div class="ret-pct" style="color:{color}">{r['rate']}%</div>
                 <div class="ret-new">+{r['new']:,} yeni</div>
-                <div class="ret-churn">-{r['churned']:,} Ã§Ä±xdÄ±</div>
+                <div class="ret-churn">-{r['churned']:,} çıxdı</div>
             </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -460,9 +460,9 @@ if ret_periods:
     st.plotly_chart(bar_chart(ret_labs, ret_rates, ret_clrs, height=220),
                     use_container_width=True, config={"displayModeBar":False})
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # FREEBET
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 if fb_d:
     section(st.session_state.title_fb)
     fb_labs  = [fb_d[p]["label"]        for p in sel if p in fb_d]
@@ -472,10 +472,10 @@ if fb_d:
 
     fb1, fb2 = st.columns(2)
     with fb1:
-        st.markdown('<div class="c-title">Freebet VerilÉn vs Ä°stifadÉ (â¼M)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="c-title">Freebet Verilən vs İstifadə (₼M)</div>', unsafe_allow_html=True)
         fig_fb = go.Figure()
-        fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_given, name="VerilÉn",   marker_color=C["purple"], marker_line_width=0))
-        fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_used,  name="Ä°stifadÉ", marker_color=C["blue"],   marker_line_width=0))
+        fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_given, name="Verilən",   marker_color=C["purple"], marker_line_width=0))
+        fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_used,  name="İstifadə", marker_color=C["blue"],   marker_line_width=0))
         fig_fb.update_layout(**{**PL,"height":250,"showlegend":True,"barmode":"group",
                                 "legend":dict(orientation="h",y=1.12,bgcolor="rgba(0,0,0,0)")})
         st.plotly_chart(fig_fb, use_container_width=True, config={"displayModeBar":False})
@@ -485,27 +485,27 @@ if fb_d:
         st.plotly_chart(bar_chart(fb_labs, fb_pr, fb_clrs, height=250),
                         use_container_width=True, config={"displayModeBar":False})
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # CLAUDE AI SECTION
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 section(st.session_state.title_ai)
 
 def build_prompt():
     lines = [
-        f"SÉn Etopaz platformasÄ±nÄ±n (AzÉrbaycan) analitika ekspertisÉn.",
-        f"AÅaÄÄ±dakÄ± {len(sel)} aylÄ±q real mÉlumatÄ± analiz et. AzÉrbaycanca dÉrin, konkret, rÉqÉmlÉrÉ Ésaslanan analiz ver.\n",
-        f"=== DÃVR: {labs[0]} â {labs[-1]} ===",
-        f"Ãmumi dÃ¶vriyyÉ: â¼{total_to:.2f}M",
-        f"Ãmumi GGR: â¼{total_ggr:.2f}M  |  Margin: {total_ggr/total_to*100:.1f}%",
+        f"Sən Etopaz platformasının (Azərbaycan) analitika ekspertisən.",
+        f"Aşağıdakı {len(sel)} aylıq real məlumatı analiz et. Azərbaycanca dərin, konkret, rəqəmlərə əsaslanan analiz ver.\n",
+        f"=== DÖVR: {labs[0]} — {labs[-1]} ===",
+        f"Ümumi dövriyyə: ₼{total_to:.2f}M",
+        f"Ümumi GGR: ₼{total_ggr:.2f}M  |  Margin: {total_ggr/total_to*100:.1f}%",
         f"Ortalama payout ratio: {avg_pr:.2f}%",
-        f"Son ay payout: {last_pr:.2f}%  {'â ï¸ KRÄ°TÄ°K â 78% hÉddi aÅÄ±lÄ±b!' if last_pr>78 else 'â Normal'}",
-        f"MÃ¼ÅtÉri: {cust_list[0]:,} â {cust_list[-1]:,}  (MoM: {cust_mom:+.1f}%)",
-        f"Depozit: â¼{total_dep:.2f}M  |  ÃÄ±xarÄ±Å: â¼{total_wd:.2f}M  |  NisbÉt: {dep_wd_r:.2f}Ã\n",
-        "=== AYLIK MÆLUMAT ===",
+        f"Son ay payout: {last_pr:.2f}%  {'⚠️ KRİTİK — 78% həddi aşılıb!' if last_pr>78 else '✓ Normal'}",
+        f"Müştəri: {cust_list[0]:,} → {cust_list[-1]:,}  (MoM: {cust_mom:+.1f}%)",
+        f"Depozit: ₼{total_dep:.2f}M  |  Çıxarış: ₼{total_wd:.2f}M  |  Nisbət: {dep_wd_r:.2f}×\n",
+        "=== AYLIK MƏLUMAT ===",
     ]
     for p in sel:
         d = kpi_d[p]
-        lines.append(f"{d['label']}: TO=â¼{d['turnover']:.2f}M  GGR=â¼{d['ggr']:.2f}M  PR={d['payout_ratio']:.1f}%  USR={d['users']:,}  RISK={d['risk_users']:,}")
+        lines.append(f"{d['label']}: TO=₼{d['turnover']:.2f}M  GGR=₼{d['ggr']:.2f}M  PR={d['payout_ratio']:.1f}%  USR={d['users']:,}  RISK={d['risk_users']:,}")
     if ret_d:
         lines.append("\n=== RETENTION ===")
         for p in ret_periods:
@@ -516,15 +516,15 @@ def build_prompt():
         for p in sel:
             if p in fb_d:
                 f2 = fb_d[p]
-                lines.append(f"{f2['label']}: VerilÉn=â¼{f2['given']:.3f}M  Ä°stifadÉ=â¼{f2['used']:.3f}M  FB_PR={f2['payout_ratio']:.1f}%")
+                lines.append(f"{f2['label']}: Verilən=₼{f2['given']:.3f}M  İstifadə=₼{f2['used']:.3f}M  FB_PR={f2['payout_ratio']:.1f}%")
     lines.append("""
-=== ANALÄ°Z STRUKTURU ===
-AÅaÄÄ±dakÄ± 4 bÃ¶lmÉ Ã¼zrÉ analiz ver. HÉr bÃ¶lmÉ 4-5 cÃ¼mlÉ olsun. Konkret rÉqÉmlÉr istifadÉ et:
+=== ANALİZ STRUKTURU ===
+Aşağıdakı 4 bölmə üzrə analiz ver. Hər bölmə 4-5 cümlə olsun. Konkret rəqəmlər istifadə et:
 
-1. ð Performans XÃ¼lasÉsi
-2. â ï¸ Kritik RisklÉr (payout, churn, riskli mÃ¼ÅtÉrilÉr)
-3. ð¡ Strateji TÃ¶vsiyÉlÉr (3 konkret addÄ±m)
-4. ð NÃ¶vbÉti Ay Proqnozu
+1. 📊 Performans Xülasəsi
+2. ⚠️ Kritik Risklər (payout, churn, riskli müştərilər)
+3. 💡 Strateji Tövsiyələr (3 konkret addım)
+4. 📈 Növbəti Ay Proqnozu
 """)
     return "\n".join(lines)
 
@@ -536,17 +536,17 @@ except Exception:
     pass
 
 if st.session_state.admin_mode and not api_key:
-    api_key = st.text_input("ð Anthropic API AÃ§arÄ±",
+    api_key = st.text_input("🔑 Anthropic API Açarı",
                             type="password", placeholder="sk-ant-...", key="api_key_input")
 
 btn_col, info_col = st.columns([2, 8])
 with btn_col:
-    run_ai = st.button("ð¤ AI Analiz Et", type="primary", disabled=not bool(api_key))
+    run_ai = st.button("🤖 AI Analiz Et", type="primary", disabled=not bool(api_key))
 with info_col:
     if not api_key:
         st.markdown(
             f'<div style="color:{C["muted"]};font-size:12.5px;padding-top:10px">'
-            f'Claude AI analizi Ã¼Ã§Ã¼n admin modunda API aÃ§arÄ±nÄ± daxil edin.</div>',
+            f'Claude AI analizi üçün admin modunda API açarını daxil edin.</div>',
             unsafe_allow_html=True)
 
 if run_ai and api_key:
@@ -561,24 +561,24 @@ if run_ai and api_key:
             )
             st.session_state.ai_result = msg.content[0].text
         except Exception as e:
-            st.session_state.ai_result = f"â XÉta: {e}"
+            st.session_state.ai_result = f"❌ Xəta: {e}"
 
 if st.session_state.ai_result:
     st.markdown(f"""
     <div class="ai-box">
-        <h3>ð¤ Claude AI Analizi â {labs[0]} â {labs[-1]}</h3>
+        <h3>🤖 Claude AI Analizi — {labs[0]} → {labs[-1]}</h3>
         <div class="ai-content">{st.session_state.ai_result}</div>
     </div>
     """, unsafe_allow_html=True)
 
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 # FOOTER
-# âââââââââââââââââââââââââââââââââââââââââââââ
+# ─────────────────────────────────────────────
 st.markdown(f"""
 <div style="margin-top:60px;padding-top:20px;border-top:1px solid {C['border']};
             text-align:center;font-size:11px;color:{C['dim']};
             letter-spacing:.07em;text-transform:uppercase">
-    Etopaz Platform Analytics &nbsp;Â·&nbsp; OMT DÃ¶vrÃ¼ &nbsp;Â·&nbsp; Mart 2026
+    Etopaz Platform Analytics &nbsp;·&nbsp; OMT Dövrü &nbsp;·&nbsp; Mart 2026
 </div>
 """, unsafe_allow_html=True)
 
