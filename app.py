@@ -1,12 +1,12 @@
 """
-Etopaz Platform Analytics — Static Dashboard
-No file upload required. Data is pre-loaded.
-Claude AI insights integrated.
+Etopaz Platform Analytics v2
+Dark / Light mode · Material Icons · Rich AI analysis
 """
 
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import re
 
 # ─────────────────────────────────────────────
 # PAGE CONFIG
@@ -19,24 +19,74 @@ st.set_page_config(
 )
 
 # ─────────────────────────────────────────────
-# COLOURS
+# SESSION STATE  (must be before theme)
 # ─────────────────────────────────────────────
-C = {
-    "bg":      "#0d0f14",
-    "card":    "#13161d",
-    "card2":   "#1a1e28",
-    "border":  "#2a2f3e",
-    "green":   "#10d98a",
-    "blue":    "#3d9bff",
-    "orange":  "#ff7043",
-    "yellow":  "#ffc13d",
-    "red":     "#f03e3e",
-    "purple":  "#9b72f4",
-    "white":   "#f0f2f8",
-    "light":   "#c8ccda",
-    "muted":   "#7b8299",
-    "dim":     "#454c60",
+ADMIN_PASS = "etopaz2026"
+
+_defaults = {
+    "dark_mode":     True,
+    "admin_mode":    False,
+    "title_main":    "Etopaz Platform Analytics",
+    "title_sub":     "OMT Dövrü  ·  Müştəri Səviyyəsində Dərin Analiz",
+    "title_kpi":     "Əsas Göstəricilər",
+    "title_trend":   "Aylıq Trend Analizi",
+    "title_table":   "Aylıq Tam Cədvəl",
+    "title_ret":     "Müştəri Saxlanılması — Retention",
+    "title_fb":      "Freebet Analizi",
+    "title_ai":      "Claude AI — Etopaz Analitikası",
+    "ai_result":     "",
 }
+for k, v in _defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+# ─────────────────────────────────────────────
+# THEME COLOURS
+# ─────────────────────────────────────────────
+dark_mode = st.session_state["dark_mode"]
+
+if dark_mode:
+    C = {
+        "bg":       "#0d0f14",
+        "card":     "#13161d",
+        "card2":    "#1a1e28",
+        "border":   "#2a2f3e",
+        "green":    "#10d98a",
+        "blue":     "#3d9bff",
+        "orange":   "#ff7043",
+        "yellow":   "#ffc13d",
+        "red":      "#f03e3e",
+        "purple":   "#9b72f4",
+        "white":    "#f0f2f8",
+        "light":    "#c8ccda",
+        "muted":    "#7b8299",
+        "dim":      "#454c60",
+        "sidebar":  "#0f1117",
+        "shadow":   "rgba(0,0,0,0.4)",
+        "ai_bg":    "rgba(155,114,244,.04)",
+        "ai_bdr":   "rgba(155,114,244,.3)",
+    }
+else:
+    C = {
+        "bg":       "#f0f4fc",
+        "card":     "#ffffff",
+        "card2":    "#edf0f8",
+        "border":   "#dde1ed",
+        "green":    "#0cb877",
+        "blue":     "#2563eb",
+        "orange":   "#e05a38",
+        "yellow":   "#c4890a",
+        "red":      "#dc2626",
+        "purple":   "#7c3aed",
+        "white":    "#111827",
+        "light":    "#374151",
+        "muted":    "#6b7280",
+        "dim":      "#9ca3af",
+        "sidebar":  "#f8faff",
+        "shadow":   "rgba(0,0,0,0.08)",
+        "ai_bg":    "rgba(124,58,237,.04)",
+        "ai_bdr":   "rgba(124,58,237,.25)",
+    }
 
 PL = dict(
     paper_bgcolor="rgba(0,0,0,0)",
@@ -54,82 +104,184 @@ PL = dict(
 )
 
 # ─────────────────────────────────────────────
-# CSS
+# CSS  +  Material Icons
 # ─────────────────────────────────────────────
+st.markdown("""
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+""", unsafe_allow_html=True)
+
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap');
 
-html, body, .stApp {{ background-color:{C['bg']} !important; font-family:'Inter',system-ui,sans-serif; color:{C['white']}; }}
-section[data-testid="stSidebar"] {{ background-color:{C['card']} !important; border-right:1px solid {C['border']}; }}
-section[data-testid="stSidebar"] * {{ color:{C['light']} !important; }}
-.block-container {{ padding:2rem 2.5rem 4rem !important; max-width:100% !important; }}
-h1,h2,h3,h4 {{ font-family:'Outfit',sans-serif !important; color:{C['white']} !important; }}
-#MainMenu, footer, header {{ visibility:hidden; }}
-hr {{ border-color:{C['border']} !important; }}
-div[data-testid="stTextInput"] input {{ background:{C['card2']} !important; border:1px solid {C['border']} !important; color:{C['white']} !important; border-radius:8px; }}
-div[data-testid="stTextInput"] label {{ color:{C['muted']} !important; font-size:11px !important; }}
+html, body, .stApp {{
+    background-color: {C['bg']} !important;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: {C['white']};
+    transition: background-color .3s ease, color .3s ease;
+}}
+section[data-testid="stSidebar"] {{
+    background-color: {C['sidebar']} !important;
+    border-right: 1px solid {C['border']};
+}}
+section[data-testid="stSidebar"] * {{ color: {C['light']} !important; }}
+section[data-testid="stSidebar"] .stToggle label {{
+    color: {C['muted']} !important; font-size: 13px !important;
+}}
+.block-container {{ padding: 2rem 2.5rem 4rem !important; max-width: 100% !important; }}
+h1,h2,h3,h4 {{ font-family: 'Outfit', sans-serif !important; color: {C['white']} !important; }}
+#MainMenu, footer, header {{ visibility: hidden; }}
+hr {{ border-color: {C['border']} !important; }}
+div[data-testid="stTextInput"] input {{
+    background: {C['card2']} !important; border: 1px solid {C['border']} !important;
+    color: {C['white']} !important; border-radius: 8px;
+}}
+div[data-testid="stTextInput"] label {{ color: {C['muted']} !important; font-size: 11px !important; }}
 
+/* ── KPI Cards ── */
 .kpi-card {{
-    background:{C['card']}; border:1px solid {C['border']}; border-radius:12px;
-    padding:20px 18px 18px; position:relative; overflow:hidden; height:100%;
+    background: {C['card']}; border: 1px solid {C['border']}; border-radius: 14px;
+    padding: 20px 18px 18px; position: relative; overflow: hidden; height: 100%;
+    box-shadow: 0 4px 20px {C['shadow']};
+    transition: transform .18s ease, box-shadow .18s ease;
 }}
-.kpi-card::before {{ content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:12px 12px 0 0; }}
-.kpi-card.green::before  {{ background:{C['green']}; }}
-.kpi-card.blue::before   {{ background:{C['blue']}; }}
-.kpi-card.orange::before {{ background:{C['orange']}; }}
-.kpi-card.yellow::before {{ background:{C['yellow']}; }}
-.kpi-card.red::before    {{ background:{C['red']}; }}
-.kpi-label {{ font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:{C['muted']}; margin-bottom:9px; }}
-.kpi-val {{ font-family:'Outfit',sans-serif; font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1; margin-bottom:7px; }}
-.kpi-val.green  {{ color:{C['green']}; }}
-.kpi-val.blue   {{ color:{C['blue']}; }}
-.kpi-val.orange {{ color:{C['orange']}; }}
-.kpi-val.yellow {{ color:{C['yellow']}; }}
-.kpi-val.red    {{ color:{C['red']}; }}
-.kpi-sub {{ font-size:12px; color:{C['muted']}; margin-bottom:7px; line-height:1.4; }}
-.badge {{ display:inline-flex; align-items:center; gap:3px; font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:20px; }}
-.badge.up   {{ background:rgba(16,217,138,.12); color:{C['green']}; }}
-.badge.down {{ background:rgba(240,62,62,.12);  color:{C['red']}; }}
-.badge.warn {{ background:rgba(255,193,61,.12); color:{C['yellow']}; }}
+.kpi-card:hover {{ transform: translateY(-2px); box-shadow: 0 8px 28px {C['shadow']}; }}
+.kpi-card::before {{
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; border-radius: 14px 14px 0 0;
+}}
+.kpi-card.green::before  {{ background: {C['green']}; }}
+.kpi-card.blue::before   {{ background: {C['blue']}; }}
+.kpi-card.orange::before {{ background: {C['orange']}; }}
+.kpi-card.yellow::before {{ background: {C['yellow']}; }}
+.kpi-card.red::before    {{ background: {C['red']}; }}
 
-.sec-head {{ display:flex; align-items:center; gap:12px; margin:44px 0 18px; }}
-.sec-head span {{ font-family:'Outfit',sans-serif; font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:{C['muted']}; white-space:nowrap; }}
-.sec-line {{ flex:1; height:1px; background:{C['border']}; }}
+.kpi-icon {{
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 10px; margin-bottom: 10px;
+    font-size: 18px !important;
+}}
+.kpi-icon.green  {{ background: rgba(16,217,138,.12); color: {C['green']} !important; }}
+.kpi-icon.blue   {{ background: rgba(61,155,255,.12); color: {C['blue']} !important; }}
+.kpi-icon.orange {{ background: rgba(255,112,67,.12); color: {C['orange']} !important; }}
+.kpi-icon.yellow {{ background: rgba(255,193,61,.12); color: {C['yellow']} !important; }}
+.kpi-icon.red    {{ background: rgba(240,62,62,.12);  color: {C['red']} !important; }}
 
-.c-title {{ font-family:'Outfit',sans-serif; font-size:15px; font-weight:700; color:{C['white']}; margin-bottom:3px; }}
+.kpi-label {{ font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: {C['muted']}; margin-bottom: 7px; }}
+.kpi-val {{ font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1; margin-bottom: 6px; }}
+.kpi-val.green  {{ color: {C['green']}; }}
+.kpi-val.blue   {{ color: {C['blue']}; }}
+.kpi-val.orange {{ color: {C['orange']}; }}
+.kpi-val.yellow {{ color: {C['yellow']}; }}
+.kpi-val.red    {{ color: {C['red']}; }}
+.kpi-sub {{ font-size: 12px; color: {C['muted']}; margin-bottom: 7px; line-height: 1.4; }}
+.badge {{
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11.5px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px;
+}}
+.badge.up   {{ background: rgba(16,217,138,.12); color: {C['green']}; }}
+.badge.down {{ background: rgba(240,62,62,.12);  color: {C['red']}; }}
+.badge.warn {{ background: rgba(255,193,61,.12); color: {C['yellow']}; }}
 
-.styled-table {{ width:100%; border-collapse:collapse; font-size:13.5px; }}
+/* ── Section Headers ── */
+.sec-head {{
+    display: flex; align-items: center; gap: 12px; margin: 44px 0 18px;
+}}
+.sec-head .sec-icon {{
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 9px;
+    font-size: 17px !important; flex-shrink: 0;
+}}
+.sec-head span.sec-title {{
+    font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: {C['muted']};
+    white-space: nowrap;
+}}
+.sec-line {{ flex: 1; height: 1px; background: {C['border']}; }}
+
+.c-title {{ font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: {C['white']}; margin-bottom: 3px; }}
+
+/* ── Data Table ── */
+.styled-table {{ width: 100%; border-collapse: collapse; font-size: 13.5px; }}
 .styled-table th {{
-    background:{C['card2']}; font-size:10.5px; font-weight:700;
-    letter-spacing:.1em; text-transform:uppercase; color:{C['muted']};
-    padding:11px 14px; text-align:right; white-space:nowrap;
-    border-bottom:1px solid {C['border']};
+    background: {C['card2']}; font-size: 10.5px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: {C['muted']};
+    padding: 11px 14px; text-align: right; white-space: nowrap;
+    border-bottom: 1px solid {C['border']};
 }}
-.styled-table th:first-child {{ text-align:left; }}
-.styled-table td {{ padding:11px 14px; text-align:right; color:{C['light']}; border-top:1px solid {C['border']}; white-space:nowrap; }}
-.styled-table td:first-child {{ text-align:left; font-weight:600; color:{C['white']}; }}
-.styled-table tr:hover td {{ background:{C['card2']}; }}
-.vg {{ color:{C['green']}!important; font-weight:600; }}
-.vy {{ color:{C['yellow']}!important; font-weight:600; }}
-.vr {{ color:{C['red']}!important;    font-weight:600; }}
+.styled-table th:first-child {{ text-align: left; }}
+.styled-table td {{ padding: 11px 14px; text-align: right; color: {C['light']}; border-top: 1px solid {C['border']}; white-space: nowrap; }}
+.styled-table td:first-child {{ text-align: left; font-weight: 600; color: {C['white']}; }}
+.styled-table tr:hover td {{ background: {C['card2']}; }}
+.vg {{ color: {C['green']} !important; font-weight: 600; }}
+.vy {{ color: {C['yellow']} !important; font-weight: 600; }}
+.vr {{ color: {C['red']} !important;    font-weight: 600; }}
 
-.ret-card {{ background:{C['card']}; border:1px solid {C['border']}; border-radius:12px; padding:16px 12px; text-align:center; height:100%; }}
-.ret-per {{ font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{C['muted']}; margin-bottom:9px; }}
-.ret-pct {{ font-family:'Outfit',sans-serif; font-size:24px; font-weight:800; line-height:1; margin-bottom:7px; }}
-.ret-new   {{ font-size:11.5px; color:{C['green']}; font-weight:500; }}
-.ret-churn {{ font-size:11.5px; color:{C['orange']}; font-weight:500; margin-top:2px; }}
+/* ── Retention Cards ── */
+.ret-card {{
+    background: {C['card']}; border: 1px solid {C['border']}; border-radius: 12px;
+    padding: 16px 12px; text-align: center; height: 100%;
+    box-shadow: 0 2px 12px {C['shadow']};
+}}
+.ret-per  {{ font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: {C['muted']}; margin-bottom: 9px; }}
+.ret-pct  {{ font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 7px; }}
+.ret-new  {{ font-size: 11.5px; color: {C['green']}; font-weight: 500; }}
+.ret-churn {{ font-size: 11.5px; color: {C['orange']}; font-weight: 500; margin-top: 2px; }}
 
-.ai-box {{ background:rgba(155,114,244,.04); border:1px solid rgba(155,114,244,.35);
-           border-radius:14px; padding:26px 28px; margin-top:10px; }}
-.ai-box h3 {{ font-family:'Outfit',sans-serif!important; font-size:18px!important;
-              font-weight:700; color:{C['purple']}!important; margin-bottom:16px!important; }}
-.ai-content {{ font-size:14px; color:{C['light']}; line-height:1.9; white-space:pre-wrap; }}
+/* ── AI Analysis Box ── */
+.ai-outer {{
+    background: {C['ai_bg']};
+    border: 1px solid {C['ai_bdr']};
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 14px;
+    box-shadow: 0 4px 24px {C['shadow']};
+}}
+.ai-header {{
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid {C['ai_bdr']};
+    background: linear-gradient(135deg, rgba(155,114,244,.08) 0%, rgba(61,155,255,.05) 100%);
+}}
+.ai-header .mat-icon {{
+    font-size: 22px !important; color: {C['purple']};
+}}
+.ai-header-text {{
+    font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: {C['purple']};
+}}
+.ai-header-sub {{
+    font-size: 11.5px; color: {C['muted']}; margin-top: 1px;
+}}
+.ai-body {{
+    padding: 20px 24px 24px;
+}}
+.ai-section {{
+    border-radius: 10px; padding: 16px 18px;
+    margin-bottom: 12px; border: 1px solid transparent;
+}}
+.ai-section-title {{
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}}
+.ai-section-title .mat-icon {{ font-size: 18px !important; }}
+.ai-section-body {{
+    font-size: 13.5px; line-height: 1.85; color: {C['light']};
+}}
+.ai-section-body p {{ margin: 0 0 6px; }}
+.ai-section-body ul {{ margin: 6px 0 6px 16px; padding: 0; }}
+.ai-section-body li {{ margin-bottom: 5px; }}
+.ai-section-body strong {{ color: {C['white']}; font-weight: 600; }}
+.ai-intro {{
+    font-size: 13px; color: {C['muted']}; line-height: 1.7;
+    padding: 0 0 14px; border-bottom: 1px solid {C['border']}; margin-bottom: 16px;
+}}
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# HARDCODED DATA  (Jun 2025 – Feb 2026)
+# HARDCODED DATA  (İyun 2025 – Fevral 2026)
 # ─────────────────────────────────────────────
 RAW_KPI = {
     "2025-06": {"label":"İyun 2025",     "turnover":6.041,  "ggr":1.373, "payout_ratio":77.28, "deposits":2.744,  "withdrawals":1.44,  "tickets":324681,  "users":10315, "risk_users":1097, "pareto_top1_pct":40.2, "pareto_top1_count":103},
@@ -168,32 +320,11 @@ ALL_PERIODS = sorted(RAW_KPI.keys())
 LABELS = {p: RAW_KPI[p]["label"] for p in ALL_PERIODS}
 
 # ─────────────────────────────────────────────
-# SESSION STATE
-# ─────────────────────────────────────────────
-ADMIN_PASS = "etopaz2026"
-
-_defaults = {
-    "admin_mode":    False,
-    "title_main":    "Etopaz Platform Analytics",
-    "title_sub":     "OMT Dövrü  ·  Müştəri Səviyyəsində Dərin Analiz",
-    "title_kpi":     "Əsas Göstəricilər",
-    "title_trend":   "Aylıq Trend Analizi",
-    "title_table":   "Aylıq Tam Cədvəl",
-    "title_ret":     "Müştəri Saxlanılması — Retention",
-    "title_fb":      "Freebet Analizi",
-    "title_ai":      "Claude AI — Etopaz Analitikası",
-    "ai_result":     "",
-}
-for k, v in _defaults.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
-
-# ─────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────
 with st.sidebar:
     st.markdown(f"""
-    <div style="padding:14px 0 18px">
+    <div style="padding:14px 0 6px">
         <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;
                     background:linear-gradient(120deg,{C['green']},{C['blue']});
                     -webkit-background-clip:text;-webkit-text-fill-color:transparent">
@@ -206,7 +337,19 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("**📅 Tarix Aralığı**")
+    # ── Night / Light Mode Toggle ──
+    new_dm = st.toggle(
+        "🌙  Gecə rejimi" if dark_mode else "☀️  Gündüz rejimi",
+        value=dark_mode,
+        key="_theme_toggle",
+    )
+    if new_dm != dark_mode:
+        st.session_state["dark_mode"] = new_dm
+        st.rerun()
+
+    st.divider()
+
+    st.markdown(f'<div style="font-size:12px;font-weight:600;color:{C["muted"]};letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">📅 Tarix Aralığı</div>', unsafe_allow_html=True)
     labels_all = [LABELS[p] for p in ALL_PERIODS]
     start_i = st.selectbox("Başlanğıc", range(len(ALL_PERIODS)),
                            format_func=lambda i: labels_all[i], key="s_start")
@@ -214,13 +357,13 @@ with st.sidebar:
                            format_func=lambda i: labels_all[i],
                            index=len(ALL_PERIODS)-1, key="s_end")
     if start_i > end_i:
-        st.error("Başlanğıc son aydan böyøk ola bilməz!")
+        st.error("Başlanğıc son aydan böyük ola bilməz!")
         sel = ALL_PERIODS[:]
     else:
         sel = ALL_PERIODS[start_i:end_i+1]
 
     st.divider()
-    st.markdown("**⚙️ Admin Modu**")
+    st.markdown(f'<div style="font-size:12px;font-weight:600;color:{C["muted"]};letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">⚙️ Admin Modu</div>', unsafe_allow_html=True)
     if not st.session_state.admin_mode:
         pw = st.text_input("Şifrə", type="password", placeholder="••••••••", key="pw_input")
         if pw == ADMIN_PASS:
@@ -241,27 +384,40 @@ if st.session_state.admin_mode:
     with st.expander("✏️ Başlıqları Redaktə Et", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
-            st.session_state.title_main  = st.text_input("Əsas başlıq",        st.session_state.title_main,  key="e1")
-            st.session_state.title_sub   = st.text_input("Alt başlıq",          st.session_state.title_sub,   key="e2")
-            st.session_state.title_kpi   = st.text_input("KPI bölməsi",         st.session_state.title_kpi,   key="e3")
-            st.session_state.title_trend = st.text_input("Trend bölməsi",       st.session_state.title_trend, key="e4")
+            st.session_state.title_main  = st.text_input("Əsas başlıq",       st.session_state.title_main,  key="e1")
+            st.session_state.title_sub   = st.text_input("Alt başlıq",         st.session_state.title_sub,   key="e2")
+            st.session_state.title_kpi   = st.text_input("KPI bölməsi",        st.session_state.title_kpi,   key="e3")
+            st.session_state.title_trend = st.text_input("Trend bölməsi",      st.session_state.title_trend, key="e4")
         with c2:
-            st.session_state.title_table = st.text_input("Cədvəl bölməsi",      st.session_state.title_table, key="e5")
-            st.session_state.title_ret   = st.text_input("Retention bölməsi",   st.session_state.title_ret,   key="e6")
-            st.session_state.title_fb    = st.text_input("Freebet bölməsi",     st.session_state.title_fb,    key="e7")
-            st.session_state.title_ai    = st.text_input("AI bölməsi başlığı",  st.session_state.title_ai,    key="e8")
+            st.session_state.title_table = st.text_input("Cədvəl bölməsi",     st.session_state.title_table, key="e5")
+            st.session_state.title_ret   = st.text_input("Retention bölməsi",  st.session_state.title_ret,   key="e6")
+            st.session_state.title_fb    = st.text_input("Freebet bölməsi",    st.session_state.title_fb,    key="e7")
+            st.session_state.title_ai    = st.text_input("AI bölmə başlığı",   st.session_state.title_ai,    key="e8")
 
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
-def section(title):
-    st.markdown(
-        f'<div class="sec-head"><span>{title}</span><div class="sec-line"></div></div>',
-        unsafe_allow_html=True)
+def section(title, icon="analytics"):
+    bg_map = {
+        "analytics": C["blue"], "show_chart": C["green"],
+        "table_chart": C["muted"], "group": C["orange"],
+        "card_giftcard": C["purple"], "smart_toy": C["purple"],
+        "trending_up": C["yellow"],
+    }
+    icon_color = bg_map.get(icon, C["blue"])
+    icon_bg = icon_color + "18"
+    st.markdown(f"""
+    <div class="sec-head">
+        <span class="material-icons-round sec-icon"
+              style="background:{icon_bg};color:{icon_color}">{icon}</span>
+        <span class="sec-title">{title}</span>
+        <div class="sec-line"></div>
+    </div>""", unsafe_allow_html=True)
 
-def kpi_card(label, value, sub, badge_txt, badge_cls, color):
+def kpi_card(label, value, sub, badge_txt, badge_cls, color, icon="trending_up"):
     st.markdown(f"""
     <div class="kpi-card {color}">
+        <span class="material-icons-round kpi-icon {color}">{icon}</span>
         <div class="kpi-label">{label}</div>
         <div class="kpi-val {color}">{value}</div>
         <div class="kpi-sub">{sub}</div>
@@ -320,22 +476,31 @@ total_wd  = sum(wd_list)
 avg_pr    = sum(pr_list)/len(pr_list)
 last_pr   = pr_list[-1]
 dep_wd_r  = total_dep/total_wd if total_wd else 0
-to_mom    = round((to_list[-1]/to_list[-2]-1)*100,1) if len(to_list)>1 else 0
-ggr_mom   = round((ggr_list[-1]/ggr_list[-2]-1)*100,1) if len(ggr_list)>1 else 0
-cust_mom  = round((cust_list[-1]/cust_list[-2]-1)*100,1) if len(cust_list)>1 else 0
+to_mom    = round((to_list[-1]/to_list[-2]-1)*100, 1) if len(to_list)>1 else 0
+ggr_mom   = round((ggr_list[-1]/ggr_list[-2]-1)*100, 1) if len(ggr_list)>1 else 0
+cust_mom  = round((cust_list[-1]/cust_list[-2]-1)*100, 1) if len(cust_list)>1 else 0
+ret_periods = [p for p in sel if p in ret_d]
 
 # ─────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────
 st.markdown(f"""
-<div style="padding-bottom:24px;border-bottom:1px solid {C['border']}">
-    <div style="font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;
-                background:linear-gradient(120deg,{C['green']} 0%,{C['blue']} 60%);
-                -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1">
-        {st.session_state.title_main}
+<div style="padding-bottom:24px;border-bottom:1px solid {C['border']};
+            display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+        <div style="font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;
+                    background:linear-gradient(120deg,{C['green']} 0%,{C['blue']} 60%);
+                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1">
+            {st.session_state.title_main}
+        </div>
+        <div style="font-size:13px;color:{C['muted']};margin-top:5px">
+            {st.session_state.title_sub}
+        </div>
     </div>
-    <div style="font-size:13px;color:{C['muted']};margin-top:5px">
-        {st.session_state.title_sub}
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:{C['muted']}">
+        <span class="material-icons-round" style="font-size:16px;color:{C['green']}">fiber_manual_record</span>
+        {labs[0]} — {labs[-1]}
+        &nbsp;·&nbsp; {len(sel)} ay
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -343,39 +508,39 @@ st.markdown(f"""
 # ─────────────────────────────────────────────
 # KPI CARDS
 # ─────────────────────────────────────────────
-section(st.session_state.title_kpi)
-k1,k2,k3,k4,k5 = st.columns(5)
+section(st.session_state.title_kpi, "analytics")
+k1, k2, k3, k4, k5 = st.columns(5)
 with k1:
     kpi_card("Ümumi Dövriyyə", f"₼{total_to:.1f}M",
              f"{len(sel)} ay üzrə",
              f"{'▲' if to_mom>=0 else '▼'} {abs(to_mom):.1f}% son ay",
-             "up" if to_mom>=0 else "down", "green")
+             "up" if to_mom>=0 else "down", "green", "payments")
 with k2:
     kpi_card("Ümumi GGR", f"₼{total_ggr:.1f}M",
              f"Margin: {total_ggr/total_to*100:.1f}%",
              f"{'▲' if ggr_mom>=0 else '▼'} {abs(ggr_mom):.1f}% son ay",
-             "up" if ggr_mom>=0 else "down", "blue")
+             "up" if ggr_mom>=0 else "down", "blue", "account_balance")
 with k3:
     kpi_card("Son Ay Payout", f"{last_pr:.1f}%",
              f"Ortalama: {avg_pr:.1f}% | Benchmark: 77%",
              "⚠ Yüksək" if last_pr>78 else "✓ Normal",
              "warn" if last_pr>78 else "up",
-             "red" if last_pr>78 else "yellow")
+             "red" if last_pr>78 else "yellow", "percent")
 with k4:
     kpi_card("Son Ay Müştəri", f"{cust_list[-1]:,}",
              f"İlk ay: {cust_list[0]:,}",
              f"{'▲' if cust_mom>=0 else '▼'} {abs(cust_mom):.1f}% son ay",
-             "up" if cust_mom>=0 else "down", "orange")
+             "up" if cust_mom>=0 else "down", "orange", "group")
 with k5:
     kpi_card("Depozit / Çıxarış", f"₼{total_dep:.1f}M",
              f"Çıxarış: ₼{total_wd:.1f}M",
              f"Nisbət: {dep_wd_r:.2f}×",
-             "up", "green")
+             "up", "green", "account_balance_wallet")
 
 # ─────────────────────────────────────────────
 # TREND CHARTS
 # ─────────────────────────────────────────────
-section(st.session_state.title_trend)
+section(st.session_state.title_trend, "show_chart")
 tc1, tc2 = st.columns(2)
 with tc1:
     st.markdown('<div class="c-title">Aylıq Dövriyyə (₼M)</div>', unsafe_allow_html=True)
@@ -385,7 +550,7 @@ with tc2:
     st.markdown('<div class="c-title">GGR (₼M) və Payout Ratio (%)</div>', unsafe_allow_html=True)
     st.plotly_chart(
         bar_line_chart(labs, ggr_list, pr_list, "GGR (₼M)", "Payout %",
-                       C["blue"], C["yellow"], y2_range=[60,90]),
+                       C["blue"], C["yellow"], y2_range=[60, 90]),
         use_container_width=True, config={"displayModeBar":False})
 
 tc3, tc4 = st.columns(2)
@@ -398,14 +563,14 @@ with tc4:
     fig_dw = go.Figure()
     fig_dw.add_trace(go.Bar(x=labs, y=dep_list, name="Depozit", marker_color=C["green"],  marker_line_width=0))
     fig_dw.add_trace(go.Bar(x=labs, y=wd_list,  name="Çıxarış", marker_color=C["orange"], marker_line_width=0))
-    fig_dw.update_layout(**{**PL,"height":260,"showlegend":True,"barmode":"group",
-                            "legend":dict(orientation="h",y=1.12,bgcolor="rgba(0,0,0,0)")})
+    fig_dw.update_layout(**{**PL, "height":260, "showlegend":True, "barmode":"group",
+                             "legend":dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)")})
     st.plotly_chart(fig_dw, use_container_width=True, config={"displayModeBar":False})
 
 # ─────────────────────────────────────────────
 # MONTHLY TABLE
 # ─────────────────────────────────────────────
-section(st.session_state.title_table)
+section(st.session_state.title_table, "table_chart")
 
 def pcls(v):
     return "vg" if v<75 else ("vy" if v<79 else "vr")
@@ -426,7 +591,8 @@ for p in sel:
     </tr>"""
 
 st.markdown(f"""
-<div style="background:{C['card']};border:1px solid {C['border']};border-radius:12px;overflow:hidden;overflow-x:auto">
+<div style="background:{C['card']};border:1px solid {C['border']};border-radius:12px;
+            overflow:hidden;overflow-x:auto;box-shadow:0 2px 16px {C['shadow']}">
 <table class="styled-table"><thead><tr>
     <th>Ay</th><th>Dövriyyə</th><th>GGR</th><th>Payout %</th>
     <th>Müştəri</th><th>Depozit</th><th>Çıxarış</th><th>Ticket</th><th>Riskli</th>
@@ -437,9 +603,8 @@ st.markdown(f"""
 # ─────────────────────────────────────────────
 # RETENTION
 # ─────────────────────────────────────────────
-ret_periods = [p for p in sel if p in ret_d]
 if ret_periods:
-    section(st.session_state.title_ret)
+    section(st.session_state.title_ret, "group")
     ret_cols = st.columns(min(len(ret_periods), 8))
     for col, p in zip(ret_cols, ret_periods):
         r = ret_d[p]
@@ -464,7 +629,7 @@ if ret_periods:
 # FREEBET
 # ─────────────────────────────────────────────
 if fb_d:
-    section(st.session_state.title_fb)
+    section(st.session_state.title_fb, "card_giftcard")
     fb_labs  = [fb_d[p]["label"]        for p in sel if p in fb_d]
     fb_given = [fb_d[p]["given"]        for p in sel if p in fb_d]
     fb_used  = [fb_d[p]["used"]         for p in sel if p in fb_d]
@@ -476,8 +641,8 @@ if fb_d:
         fig_fb = go.Figure()
         fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_given, name="Verilən",   marker_color=C["purple"], marker_line_width=0))
         fig_fb.add_trace(go.Bar(x=fb_labs, y=fb_used,  name="İstifadə", marker_color=C["blue"],   marker_line_width=0))
-        fig_fb.update_layout(**{**PL,"height":250,"showlegend":True,"barmode":"group",
-                                "legend":dict(orientation="h",y=1.12,bgcolor="rgba(0,0,0,0)")})
+        fig_fb.update_layout(**{**PL, "height":250, "showlegend":True, "barmode":"group",
+                                 "legend":dict(orientation="h", y=1.12, bgcolor="rgba(0,0,0,0)")})
         st.plotly_chart(fig_fb, use_container_width=True, config={"displayModeBar":False})
     with fb2:
         st.markdown('<div class="c-title">Freebet Payout Ratio (%)</div>', unsafe_allow_html=True)
@@ -486,14 +651,98 @@ if fb_d:
                         use_container_width=True, config={"displayModeBar":False})
 
 # ─────────────────────────────────────────────
+# AI ANALYSIS HELPERS
+# ─────────────────────────────────────────────
+def _md_to_html(text, white_color, light_color, muted_color):
+    """Minimal markdown → HTML (bold, bullets, paragraphs)."""
+    lines = text.strip().split("\n")
+    out = []
+    in_ul = False
+    for raw in lines:
+        ln = raw.strip()
+        # inline bold
+        ln = re.sub(r"\*\*(.+?)\*\*",
+                    rf'<strong style="color:{white_color};font-weight:600">\1</strong>', ln)
+        if not ln:
+            if in_ul:
+                out.append("</ul>"); in_ul = False
+            continue
+        if ln.startswith(("- ", "• ", "* ")):
+            if not in_ul:
+                out.append(f'<ul style="margin:8px 0 8px 18px;padding:0">'); in_ul = True
+            out.append(f'<li style="margin-bottom:5px;line-height:1.75;color:{light_color}">{ln[2:]}</li>')
+        else:
+            if in_ul:
+                out.append("</ul>"); in_ul = False
+            out.append(f'<p style="margin:5px 0;line-height:1.8;color:{light_color}">{ln}</p>')
+    if in_ul:
+        out.append("</ul>")
+    return "\n".join(out)
+
+
+def render_ai_response(text):
+    """Parse 4-section Claude response and render as rich cards."""
+    SECTIONS = [
+        ("1", C["blue"],   "analytics",     ),
+        ("2", C["red"],    "warning_amber",  ),
+        ("3", C["green"],  "lightbulb",      ),
+        ("4", C["yellow"], "trending_up",    ),
+    ]
+
+    # Split by numbered section starts  e.g.  "1. 📊 ..."
+    parts = re.split(r"(?m)^(?=\d+\.\s)", text.strip())
+
+    # Intro paragraph (before first numbered section)
+    intro = parts[0].strip() if parts and not re.match(r"^\d+\.\s", parts[0]) else ""
+    section_parts = [p for p in parts if re.match(r"^\d+\.\s", p)]
+
+    html_parts = []
+
+    if intro:
+        html_parts.append(
+            f'<div class="ai-intro">{_md_to_html(intro, C["white"], C["muted"], C["dim"])}</div>'
+        )
+
+    for raw_sec in section_parts:
+        m = re.match(r"^(\d+)\.\s+(.+?)\n(.*)", raw_sec, re.DOTALL)
+        if not m:
+            continue
+        num, title, body = m.group(1).strip(), m.group(2).strip(), m.group(3).strip()
+
+        # pick colour / icon
+        idx = int(num) - 1
+        if 0 <= idx < len(SECTIONS):
+            _, color, icon = SECTIONS[idx]
+        else:
+            color, icon = C["purple"], "smart_toy"
+
+        body_html = _md_to_html(body, C["white"], C["light"], C["muted"])
+        bg = color + "10"
+        border = color + "30"
+
+        html_parts.append(f"""
+<div class="ai-section" style="background:{bg};border-color:{border};border-left:4px solid {color}">
+  <div class="ai-section-title" style="color:{color}">
+    <span class="material-icons-round mat-icon">{icon}</span>
+    {num}. {title}
+  </div>
+  <div class="ai-section-body">{body_html}</div>
+</div>""")
+
+    return "\n".join(html_parts)
+
+
+# ─────────────────────────────────────────────
 # CLAUDE AI SECTION
 # ─────────────────────────────────────────────
-section(st.session_state.title_ai)
+section(st.session_state.title_ai, "smart_toy")
 
 def build_prompt():
     lines = [
-        f"Sən Etopaz platformasının (Azərbaycan) analitika ekspertisən.",
-        f"Aşağıdakı {len(sel)} aylıq real məlumatı analiz et. Azərbaycanca dərin, konkret, rəqəmlərə əsaslanan analiz ver.\n",
+        "Sən Etopaz platformasının (Azərbaycan) analitika ekspertisən.",
+        f"Aşağıdakı {len(sel)} aylıq real məlumatı analiz et.",
+        "**VACIB**: Azərbaycanca yaz. Markdown formatlaşdırma istifadə et — "
+        "**qalın** mətn üçün **, siyahı üçün - işarəsi. Konkret rəqəmlər mütləq göstər.\n",
         f"=== DÖVR: {labs[0]} — {labs[-1]} ===",
         f"Ümumi dövriyyə: ₼{total_to:.2f}M",
         f"Ümumi GGR: ₼{total_ggr:.2f}M  |  Margin: {total_ggr/total_to*100:.1f}%",
@@ -505,28 +754,39 @@ def build_prompt():
     ]
     for p in sel:
         d = kpi_d[p]
-        lines.append(f"{d['label']}: TO=₼{d['turnover']:.2f}M  GGR=₼{d['ggr']:.2f}M  PR={d['payout_ratio']:.1f}%  USR={d['users']:,}  RISK={d['risk_users']:,}")
+        lines.append(f"{d['label']}: TO=₼{d['turnover']:.2f}M  GGR=₼{d['ggr']:.2f}M  "
+                     f"PR={d['payout_ratio']:.1f}%  USR={d['users']:,}  RISK={d['risk_users']:,}")
     if ret_d:
         lines.append("\n=== RETENTION ===")
         for p in ret_periods:
             r = ret_d[p]
-            lines.append(f"{kpi_d[p]['label']}: Retention={r['rate']}%  Yeni={r['new']:,}  Churn={r['churned']:,}")
+            lines.append(f"{kpi_d[p]['label']}: Retention={r['rate']}%  "
+                         f"Yeni={r['new']:,}  Churn={r['churned']:,}")
     if fb_d:
         lines.append("\n=== FREEBET ===")
         for p in sel:
             if p in fb_d:
                 f2 = fb_d[p]
-                lines.append(f"{f2['label']}: Verilən=₼{f2['given']:.3f}M  İstifadə=₼{f2['used']:.3f}M  FB_PR={f2['payout_ratio']:.1f}%")
+                lines.append(f"{f2['label']}: Verilən=₼{f2['given']:.3f}M  "
+                              f"İstifadə=₼{f2['used']:.3f}M  FB_PR={f2['payout_ratio']:.1f}%")
     lines.append("""
 === ANALİZ STRUKTURU ===
-Aşağıdakı 4 bölmə üzrə analiz ver. Hər bölmə 4-5 cümlə olsun. Konkret rəqəmlər istifadə et:
+Aşağıdakı **4 bölmə** üzrə analiz ver. Hər bölmə 4-6 cümlə. Markdown istifadə et:
 
 1. 📊 Performans Xülasəsi
-2. ⚠️ Kritik Risklər (payout, churn, riskli müştərilər)
-3. 💡 Strateji Tövsiyələr (3 konkret addım)
+(Əsas rəqəmlər, böyümə trendi, ən güclü/zəif aylar)
+
+2. ⚠️ Kritik Risklər
+(Payout ratio problemi, churn artımı, riskli müştəri sayı, konkret rəqəmlərlə)
+
+3. 💡 Strateji Tövsiyələr
+(3 konkret addım — hər birini bullet list olaraq yaz)
+
 4. 📈 Növbəti Ay Proqnozu
+(Rəqəmli hədəflər — dövriyyə, payout, müştəri üzrə)
 """)
     return "\n".join(lines)
+
 
 # API key
 api_key = ""
@@ -546,7 +806,7 @@ with info_col:
     if not api_key:
         st.markdown(
             f'<div style="color:{C["muted"]};font-size:12.5px;padding-top:10px">'
-            f'Claude AI analizi üçün admin modunda API açarını daxil edin.</div>',
+            "Claude AI analizi üçün API açarı lazımdır (Streamlit Secrets).</div>",
             unsafe_allow_html=True)
 
 if run_ai and api_key:
@@ -556,20 +816,35 @@ if run_ai and api_key:
             client = anthropic.Anthropic(api_key=api_key)
             msg = client.messages.create(
                 model="claude-opus-4-5-20251101",
-                max_tokens=1800,
+                max_tokens=2000,
                 messages=[{"role": "user", "content": build_prompt()}]
             )
             st.session_state.ai_result = msg.content[0].text
         except Exception as e:
-            st.session_state.ai_result = f"❌ Xəta: {e}"
+            st.session_state.ai_result = f"HATA:{e}"
 
+# ── Render AI result ──────────────────────────
 if st.session_state.ai_result:
-    st.markdown(f"""
-    <div class="ai-box">
-        <h3>🤖 Claude AI Analizi — {labs[0]} → {labs[-1]}</h3>
-        <div class="ai-content">{st.session_state.ai_result}</div>
+    raw = st.session_state.ai_result
+
+    if raw.startswith("HATA:"):
+        st.error(f"❌ Xəta: {raw[5:]}")
+    else:
+        cards_html = render_ai_response(raw)
+        st.markdown(f"""
+<div class="ai-outer">
+  <div class="ai-header">
+    <span class="material-icons-round mat-icon">smart_toy</span>
+    <div>
+      <div class="ai-header-text">Claude AI Analizi</div>
+      <div class="ai-header-sub">{labs[0]} → {labs[-1]} · {len(sel)} ay · claude-opus-4-5</div>
     </div>
-    """, unsafe_allow_html=True)
+  </div>
+  <div class="ai-body">
+    {cards_html}
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # FOOTER
@@ -581,4 +856,3 @@ st.markdown(f"""
     Etopaz Platform Analytics &nbsp;·&nbsp; OMT Dövrü &nbsp;·&nbsp; Mart 2026
 </div>
 """, unsafe_allow_html=True)
-
